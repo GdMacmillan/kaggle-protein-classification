@@ -1,3 +1,5 @@
+__pycache__
 .ipynb_checkpoints
 data/train_images/*
 data/test_images/*
+work
