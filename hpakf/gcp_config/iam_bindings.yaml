@@ -6,7 +6,7 @@
 # * each role in roles is granted to each member in members
 bindings:
 - members:
-  - serviceAccount:hpa-kf-admin@optfit-kaggle.iam.gserviceaccount.com
+  - serviceAccount:hpakf-admin@optfit-kaggle.iam.gserviceaccount.com
   roles:
   # Grant permissions needed to push the app to a cloud repository
   - roles/source.admin
@@ -15,7 +15,7 @@ bindings:
   # Network admin is needed to enable IAP and configure network settings like backend timeouts and health checks
   - roles/compute.networkAdmin
 - members:
-  - serviceAccount:hpa-kf-user@optfit-kaggle.iam.gserviceaccount.com
+  - serviceAccount:hpakf-user@optfit-kaggle.iam.gserviceaccount.com
   roles:
   # Grant permissions needed to submit builds to Google Cloud Container Builder
   - roles/cloudbuild.builds.editor
@@ -27,7 +27,7 @@ bindings:
   - roles/bigquery.admin
   - roles/dataflow.admin
 - members:
-  - serviceAccount:hpa-kf-vm@optfit-kaggle.iam.gserviceaccount.com
+  - serviceAccount:hpakf-vm@optfit-kaggle.iam.gserviceaccount.com
   roles:
   # VM service account is used to write logs
   - roles/logging.logWriter

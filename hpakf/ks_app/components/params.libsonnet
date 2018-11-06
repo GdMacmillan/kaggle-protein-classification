@@ -77,7 +77,7 @@
     spartakus: {
       name: 'spartakus',
       reportUsage: 'true',
-      usageId: '266745336',
+      usageId: '133234482',
     },
     "cloud-endpoints": {
       name: 'cloud-endpoints',
@@ -95,9 +95,9 @@
     "iap-ingress": {
       disableJwtChecking: 'false',
       envoyImage: 'gcr.io/kubeflow-images-public/envoy:v20180309-0fb4886b463698702b6a08955045731903a18738',
-      hostname: 'hpa-kf.endpoints.optfit-kaggle.cloud.goog',
+      hostname: 'hpakf.endpoints.optfit-kaggle.cloud.goog',
       ingressSetupImage: 'gcr.io/kubeflow-images-public/ingress-setup:latest',
-      ipName: 'hpa-kf-ip',
+      ipName: 'hpakf-ip',
       issuer: 'letsencrypt-prod',
       name: 'iap-ingress',
       namespace: 'null',
