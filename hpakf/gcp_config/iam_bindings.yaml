@@ -37,5 +37,8 @@ bindings:
   - roles/storage.objectViewer
 - members:
   - user:barton@optfit.ai
+  - user:marksliva8@gmail.com
+  - user:aleenanotary@gmail.com
+  - user:lindsey@optfit.ai
   roles:
   - roles/iap.httpsResourceAccessor
