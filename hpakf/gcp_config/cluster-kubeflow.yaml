@@ -66,7 +66,7 @@ resources:
       masterAuthorizedNetworksConfigEnabled: false
       masterAuthorizedNetworksConfigCidr:
       - cidrBlock: 1.2.3.4/32
-    users: ["user:barton@optfit.ai", "user:marksliva8@gmail.com", "user:aleenanotary@gmail.com", "user:lindsey@optfit.ai"]
+    users: ["user:barton@optfit.ai", "user:marksliva8@gmail.com", "user:aleenanotary@gmail.com", "user:lindsey@optfit.ai", "user:a.0.spin@gmail.com"]
       # List users to grant appropriate GCP permissions to use Kubeflow.
       # These can either be individual users (Google accounts) or Google
       # Groups.
