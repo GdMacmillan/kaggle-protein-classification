@@ -1,7 +1,7 @@
-apiVersion: "kubeflow.org/v1alpha2"
+apiVersion: "kubeflow.org/v1beta1"
 kind: "PyTorchJob"
 metadata:
-  name: "pytorch-tcp-dist-mnist"
+  name: "pytorch-human-protein-atlas"
 spec:
   pytorchReplicaSpecs:
     Master:
@@ -11,7 +11,7 @@ spec:
         spec:
           containers:
             - name: pytorch
-              image: gcr.io/kubeflow-ci/pytorch-dist-mnist_test:1.0
+              image: gcr.io/optfit-kaggle/human-protein-atlas:latest
     Worker:
       replicas: 3
       restartPolicy: OnFailure
@@ -19,4 +19,4 @@ spec:
         spec:
           containers:
             - name: pytorch
-              image: gcr.io/kubeflow-ci/pytorch-dist-mnist_test:1.0
+              image: gcr.io/optfit-kaggle/human-protein-atlas:latest
