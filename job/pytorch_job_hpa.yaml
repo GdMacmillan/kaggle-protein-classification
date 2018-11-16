@@ -1,4 +1,4 @@
-apiVersion: "kubeflow.org/v1beta1"
+apiVersion: "kubeflow.org/v1alpha2"
 kind: "PyTorchJob"
 metadata:
   name: "pytorch-human-protein-atlas"
@@ -6,14 +6,6 @@ spec:
   pytorchReplicaSpecs:
     Master:
       replicas: 1
-      restartPolicy: OnFailure
-      template:
-        spec:
-          containers:
-            - name: pytorch
-              image: gcr.io/optfit-kaggle/human-protein-atlas:latest
-    Worker:
-      replicas: 3
       restartPolicy: OnFailure
       template:
         spec:
