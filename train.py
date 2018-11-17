@@ -11,19 +11,19 @@ from src import *
 
 BASE_DIR = '.'
 TRAIN_IMAGE_DIR = os.path.join(BASE_DIR, 'data/train_images')
-VALIDATION_SPLIT = 0.33
-SUBSAMPLE = True # if true train on subsample of images to test locally
+VALIDATION_SPLIT = 0.10
+SUBSAMPLE = False # if true train on subsample of images to test locally
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('-n', '--network-name', type=str, required=True)
     parser.add_argument('-d', '--dataset-name', type=str, required=True)
-    parser.add_argument('-m', '--multilabel', type=bool, default=False)
+    parser.add_argument('-m', '--multilabel', type=bool, default=True)
     parser.add_argument('-p', '--pretrained', type=bool, default=False)
     parser.add_argument('-dp', '--data-parallel', type=bool, default=True)
     parser.add_argument('-l', '--load')
-    parser.add_argument('--batchSz', type=int, default=4) # 64
-    parser.add_argument('--nEpochs', type=int, default=2) # 300
+    parser.add_argument('--batchSz', type=int, default=32) # 64
+    parser.add_argument('--nEpochs', type=int, default=10) # 300
     parser.add_argument('--sEpoch', type=int, default=1)
     parser.add_argument('--no-cuda', default=True, action='store_true')
     parser.add_argument('--nGPU', type=int, default=0)
