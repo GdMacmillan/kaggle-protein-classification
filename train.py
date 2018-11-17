@@ -25,7 +25,7 @@ def main():
     parser.add_argument('--batchSz', type=int, default=4) # 64
     parser.add_argument('--nEpochs', type=int, default=2) # 300
     parser.add_argument('--sEpoch', type=int, default=1)
-    parser.add_argument('--no-cuda', action='store_true')
+    parser.add_argument('--no-cuda', default=True, action='store_true')
     parser.add_argument('--nGPU', type=int, default=0)
     parser.add_argument('--save')
     parser.add_argument('--seed', type=int, default=50)

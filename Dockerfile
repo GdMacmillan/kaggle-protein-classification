@@ -1,6 +1,9 @@
 # Use https://docs.nvidia.com/deeplearning/dgx/pytorch-release-notes/running.html#running
 FROM nvcr.io/nvidia/pytorch:18.11-py3
 
-COPY . /workspace/
+RUN mkdir /workspace/job
+COPY . /workspace/job/
 
-ENTRYPOINT ["python", "-u", "/workspace/train.py"]
+ENV BOTO_CONFIG=/path/to/.boto
+
+ENTRYPOINT ["job/docker_entrypoint.sh"]

@@ -12,3 +12,6 @@ spec:
           containers:
             - name: pytorch
               image: gcr.io/optfit-kaggle/human-protein-atlas:latest
+              resources:
+                limits:
+                  nvidia.com/gpu: 1

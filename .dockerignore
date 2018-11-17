@@ -1,3 +1,4 @@
-data
+data/train_images/*
+data/test_images/*
 hpakf
 *.ipynb
