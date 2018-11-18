@@ -10,12 +10,12 @@ import shutil
 from src import *
 
 BASE_DIR = '.'
-TRAIN_IMAGE_DIR = os.path.join(BASE_DIR, 'data/train_images')
 VALIDATION_SPLIT = 0.10
 SUBSAMPLE = False # if true train on subsample of images to test locally
 
 def main():
     parser = argparse.ArgumentParser()
+    parser.add_argument('--train-images-path', type=str, default=os.path.join(BASE_DIR, 'data/train_images'))
     parser.add_argument('-n', '--network-name', type=str, required=True)
     parser.add_argument('-d', '--dataset-name', type=str, required=True)
     parser.add_argument('-m', '--multilabel', type=bool, default=True)
@@ -32,6 +32,8 @@ def main():
     parser.add_argument('--opt', type=str, default='sgd', choices=('sgd', 'adam', 'rmsprop'))
     parser.add_argument('--crit', type=str, default='f1', choices=('bce', 'f1'))
     args = parser.parse_args()
+
+    train_image_dir = args.train_images_path
 
     args.cuda = not args.no_cuda and torch.cuda.is_available()
     if args.cuda and arg.nGPU == 0:
@@ -52,7 +54,7 @@ def main():
 
     kwargs = {'num_workers': 4 * nGPU, 'pin_memory': True} if args.cuda and nGPU > 0 else {'num_workers': 4}
 
-    dataset = get_dataset(TRAIN_IMAGE_DIR)
+    dataset = get_dataset(train_image_dir)
 
     trainLoader, devLoader = get_train_test_split(dataset,
                                     val_split=VALIDATION_SPLIT,
