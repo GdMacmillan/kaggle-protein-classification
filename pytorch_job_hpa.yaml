@@ -12,19 +12,15 @@ spec:
           containers:
             - name: pytorch
               image: gcr.io/optfit-kaggle/human-protein-atlas:latest
-              securityContext:
-                privileged: true
-                capabilities:
-                  add:
-                    - SYS_ADMIN
-              lifecycle:
-                postStart:
-                  exec:
-                    command: ["gcsfuse", "-o", "nonempty", "human-protein-atlas-data", "/mnt/human-protein-atlas-data"]
-                preStop:
-                  exec:
-                    command: ["fusermount", "-u", "/mnt/human-protein-atlas-data"]
-              # todo: use a gpu after we figure out how to load in the data
-              # resources:
-              #   limits:
-              #     nvidia.com/gpu: 1
+              volumeMounts:
+              - mountPath: /hpakf-image-data
+                name: test-volume
+          volumes:
+          - name: test-volume
+            # This GCE PD must already exist.
+            gcePersistentDisk:
+              pdName: hpakf-data
+              fsType: ext4
+          resources:
+            limits:
+              nvidia.com/gpu: 1

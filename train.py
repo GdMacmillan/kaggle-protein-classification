@@ -9,18 +9,20 @@ import shutil
 # internals
 from src import *
 
-BASE_DIR = '.'
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 VALIDATION_SPLIT = 0.10
 SUBSAMPLE = False # if true train on subsample of images to test locally
 
+default_path = os.path.join(BASE_DIR, 'data/train_images')
+
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--train-images-path', type=str, default=os.path.join(BASE_DIR, 'data/train_images'))
     parser.add_argument('-n', '--network-name', type=str, required=True)
     parser.add_argument('-d', '--dataset-name', type=str, required=True)
     parser.add_argument('-m', '--multilabel', type=bool, default=True)
     parser.add_argument('-p', '--pretrained', type=bool, default=False)
     parser.add_argument('-dp', '--data-parallel', type=bool, default=True)
+    parser.add_argument('--train-images-path', type=str, default=default_path)
     parser.add_argument('-l', '--load')
     parser.add_argument('--batchSz', type=int, default=32) # 64
     parser.add_argument('--nEpochs', type=int, default=10) # 300

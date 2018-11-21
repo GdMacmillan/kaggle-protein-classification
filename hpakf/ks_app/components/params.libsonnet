@@ -7,7 +7,7 @@
       cloud: 'null',
       deploymentNamespace: 'null',
       deploymentScope: 'cluster',
-      disks: 'null',
+      disks: 'hpakf-data',
       name: 'pytorch-operator',
       namespace: 'null',
       pytorchDefaultImage: 'null',
