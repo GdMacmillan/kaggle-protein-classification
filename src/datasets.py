@@ -5,10 +5,15 @@ import numpy as np
 from torch.utils.data import Dataset
 from skimage import io, transform, img_as_float
 
+def to_one_hot(df):
+    tmp = df.Target.str.get_dummies(sep=' ')
+    tmp.columns = map(int, tmp.columns)
+    return df.join(tmp.sort_index(axis=1))
+
 class TrainImageDataset(Dataset):
     """Fluorescence microscopy images of protein structures training dataset"""
 
-    def __init__(self, label_file, image_dir, transform=None):
+    def __init__(self, image_dir, label_file, transform=None, idxs=None):
         """
         Args:
             label_file (string): Path to the csv file with annotations.
@@ -16,14 +21,14 @@ class TrainImageDataset(Dataset):
             transform (callable, optional): Optional transform to be applied
                 on a sample.
         """
-        self.labels = self.to_one_hot(pd.read_csv(label_file))
         self.image_dir = image_dir
         self.transform = transform
+        self.idxs = idxs
 
-    def to_one_hot(self, df):
-        tmp = df.Target.str.get_dummies(sep=' ')
-        tmp.columns = map(int, tmp.columns)
-        return df.join(tmp.sort_index(axis=1))
+        self.labels = to_one_hot(pd.read_csv(label_file))
+        if self.idxs is not None:
+            self.labels = self.labels.iloc[self.idxs, :].\
+                                                reset_index(drop=True)
 
     def __len__(self):
         return len(self.labels)
