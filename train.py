@@ -11,7 +11,6 @@ from src import *
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 VALIDATION_SPLIT = 0.10
-SUBSAMPLE = True # if true train on subsample of images to test locally
 
 default_path = os.path.join(BASE_DIR, 'data/train_images')
 default_csv = os.path.join(BASE_DIR, 'data/train.csv')
@@ -29,6 +28,7 @@ def main():
     parser.add_argument('--batchSz', type=int, default=32) # 64
     parser.add_argument('--nEpochs', type=int, default=10) # 300
     parser.add_argument('--sEpoch', type=int, default=1)
+    parser.add_argument('--nSubsample', type=int, default=0)
     parser.add_argument('--no-cuda', default=True, action='store_true')
     parser.add_argument('--nGPU', type=int, default=0)
     parser.add_argument('--save')
@@ -54,13 +54,13 @@ def main():
         shutil.rmtree(args.save)
     os.makedirs(args.save, exist_ok=True)
 
-    kwargs = {'num_workers': 4 * nGPU, 'pin_memory': True} if args.cuda and nGPU > 0 else {'num_workers': 4}
+    kwargs = {'num_workers': 4 * nGPU, 'pin_memory': True, 'batch_size': args.batchSz} if args.cuda and nGPU > 0 else {'num_workers': 4, 'batch_size': args.batchSz}
 
     trainLoader, devLoader = get_train_test_split(
                                     args.train_images_path,
                                     args.train_csv_path,
                                     val_split=VALIDATION_SPLIT,
-                                    subsample=SUBSAMPLE,
+                                    n_subsample=args.nSubsample,
                                     **kwargs)
 
     if args.load:

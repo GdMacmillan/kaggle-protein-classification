@@ -30,13 +30,12 @@ def get_dataset(image_dir, label_file, train=True, idxs=None):
 def get_train_test_split(train_image_dir,
                          train_image_csv,
                          val_split,
-                         subsample,
-                         n_subsample=100,
+                         n_subsample,
                          **kwargs
                          ):
     with open(train_image_csv, 'r') as f:
         n_images = sum(1 for row in f.readlines()) - 1 # -1 for header row
-    if subsample:
+    if n_subsample != 0:
         arr = np.random.choice(n_images, n_subsample, replace=False)
         train_idxs = arr[:int(n_subsample * (1 - val_split))]
         dev_idxs = arr[int(n_subsample * (1 - val_split)):]
