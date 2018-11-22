@@ -54,7 +54,9 @@ def main():
         shutil.rmtree(args.save)
     os.makedirs(args.save, exist_ok=True)
 
-    kwargs = {'num_workers': 4 * nGPU, 'pin_memory': True, 'batch_size': args.batchSz} if args.cuda and nGPU > 0 else {'num_workers': 4, 'batch_size': args.batchSz}
+    # kwargs = {'num_workers': 4 * nGPU, 'pin_memory': True, 'batch_size': args.batchSz} if args.cuda and nGPU > 0 else {'num_workers': 4, 'batch_size': args.batchSz}
+
+    kwargs = {}
 
     trainLoader, devLoader = get_train_test_split(
                                     args.train_images_path,

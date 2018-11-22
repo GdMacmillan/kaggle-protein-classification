@@ -16,11 +16,8 @@ spec:
               - mountPath: /hpakf-image-data
                 name: test-volume
           volumes:
-          - name: test-volume
-            # This GCE PD must already exist.
-            gcePersistentDisk:
-              pdName: hpakf-data
-              fsType: ext4
-          resources:
-            limits:
-              nvidia.com/gpu: 1
+            - name: test-volume
+              # This GCE PD must already exist.
+              gcePersistentDisk:
+                pdName: hpakf-data
+                fsType: ext4

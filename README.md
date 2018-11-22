@@ -51,3 +51,19 @@ Go to the Jupyterhub pane and click start my server. This will take you into the
 #### Pytorch-operator
 
 A component that is still very early on in the development cycle is pytorch-operator.
+
+Anyone with privs on the cluster can run. Do `git pull` latest code then run:
+
+`docker build -t gcr.io/optfit-kaggle/human-protein-atlas .`
+
+`docker push gcr.io/optfit-kaggle/human-protein-atlas:latest`
+
+`kubectl -n kubeflow create -f pytorch_job_hpa.yaml``
+
+to ssh to pod it’s training run:
+
+`kubectl exec -it pytorch-human-protein-atlas-master-0 -- /bin/bash`
+
+to see logs:
+
+`kubectl -n kubeflow logs -f pytorch-human-protein-atlas-master-0`
