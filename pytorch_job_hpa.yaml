@@ -1,0 +1,26 @@
+apiVersion: "kubeflow.org/v1alpha2"
+kind: "PyTorchJob"
+metadata:
+  name: "pytorch-human-protein-atlas"
+spec:
+  pytorchReplicaSpecs:
+    Master:
+      replicas: 1
+      restartPolicy: OnFailure
+      template:
+        spec:
+          containers:
+            - name: pytorch
+              image: gcr.io/optfit-kaggle/human-protein-atlas:latest
+              volumeMounts:
+              - mountPath: /hpakf-image-data
+                name: test-volume
+          volumes:
+          - name: test-volume
+            # This GCE PD must already exist.
+            gcePersistentDisk:
+              pdName: hpakf-data
+              fsType: ext4
+          resources:
+            limits:
+              nvidia.com/gpu: 1

@@ -1,5 +1,6 @@
 __pycache__
 .ipynb_checkpoints
+.vscode
 data/train_images/*
 data/test_images/*
 work
