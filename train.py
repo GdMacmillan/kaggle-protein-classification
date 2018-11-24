@@ -216,7 +216,7 @@ def predict(args, net, dataloader):
             image_ids = data['image_id']
             if args.cuda:
                 images = images.cuda()
-            predictions = net(images)
+            predictions = net(images).data.gt(0.5)
             preds = positive_predictions(predictions)
             predictions_writer.writerows(list(zip(image_ids, preds)))
 
