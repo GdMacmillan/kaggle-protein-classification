@@ -5,6 +5,7 @@ import argparse
 import os
 import setproctitle
 import shutil
+import csv
 
 # internals
 from src import *
@@ -12,7 +13,8 @@ from src import *
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 VALIDATION_SPLIT = 0.10
 
-default_path = os.path.join(BASE_DIR, 'data/train_images')
+default_train_images = os.path.join(BASE_DIR, 'data/train_images')
+default_test_images = os.path.join(BASE_DIR, 'data/test_images')
 default_csv = os.path.join(BASE_DIR, 'data/train.csv')
 
 def main():
@@ -22,7 +24,8 @@ def main():
     parser.add_argument('-m', '--multilabel', type=bool, default=True)
     parser.add_argument('-p', '--pretrained', type=bool, default=False)
     parser.add_argument('-dp', '--data-parallel', type=bool, default=True)
-    parser.add_argument('--train-images-path', type=str, default=default_path)
+    parser.add_argument('--train-images-path', type=str, default=default_train_images)
+    parser.add_argument('--test-images-path', type=str, default=default_test_images)
     parser.add_argument('--train-csv-path', type=str, default=default_csv)
     parser.add_argument('-l', '--load')
     parser.add_argument('--batchSz', type=int, default=32) # 64
@@ -56,7 +59,7 @@ def main():
 
     # kwargs = {'num_workers': 4 * nGPU, 'pin_memory': True, 'batch_size': args.batchSz} if args.cuda and nGPU > 0 else {'num_workers': 4, 'batch_size': args.batchSz}
 
-    kwargs = {}
+    kwargs = {'batch_size': args.batchSz}
 
     trainLoader, devLoader = get_train_test_split(
                                     args.train_images_path,
@@ -101,6 +104,8 @@ def main():
 
     trainF.close()
     testF.close()
+    predict_dataloader = get_prediction_dataloader(args.test_images_path, **kwargs)
+    predict(args, net, predict_dataloader)
 
 def train(args, epoch, net, trainLoader, criterion, optimizer, trainF):
     net.train()
@@ -198,6 +203,22 @@ def test(args, epoch, net, devLoader, criterion, optimizer, testF):
         test_loss, incorrect, nTotal, err))
         testF.write('{},{},{}\n'.format(epoch, test_loss, err))
     testF.flush()
+
+def predict(args, net, dataloader):
+    net.eval()
+    csv_path = os.path.join(args.save, 'test-images-predictions.csv')
+
+    with(open(csv_path, 'w')) as csv_file:
+        predictions_writer = csv.writer(csv_file, delimiter=',')
+        predictions_writer.writerow(['Id', 'Predicted'])
+        for batch_index, data in enumerate(dataloader):
+            images = data['image']
+            image_ids = data['image_id']
+            if args.cuda:
+                images = images.cuda()
+            predictions = net(images)
+            preds = positive_predictions(predictions)
+            predictions_writer.writerows(list(zip(image_ids, preds)))
 
 def adjust_opt(optAlg, optimizer, epoch):
     if optAlg == 'sgd':

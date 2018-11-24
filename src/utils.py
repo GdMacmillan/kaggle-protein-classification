@@ -10,10 +10,13 @@ from .loss_functions import f1_loss, binary_cross_entropy_with_logits
 from .transforms import *
 from .datasets import TrainImageDataset, TestImageDataset
 
-def get_dataset(image_dir, label_file, train=True, idxs=None):
-    transform = transforms.Compose(
+def get_transform():
+    return transforms.Compose(
                     [CombineColors(),
                      ToTensor()])
+
+def get_dataset(image_dir, label_file, train=True, idxs=None):
+    transform = get_transform()
     if train:
         dataset = TrainImageDataset(
                          image_dir=image_dir,
@@ -26,6 +29,17 @@ def get_dataset(image_dir, label_file, train=True, idxs=None):
                          transform=transform,
                          idxs=idxs)
     return dataset
+
+def get_prediction_dataloader(image_dir, **kwargs):
+    return DataLoader(dataset = get_prediction_dataset(image_dir),
+        shuffle=False,
+        **kwargs
+    )
+
+def get_prediction_dataset(image_dir):
+    return TestImageDataset(
+        image_dir=image_dir,
+        transform=get_transform())
 
 def get_train_test_split(train_image_dir,
                          train_image_csv,
@@ -75,3 +89,16 @@ def get_loss_function(lf='bce'):
         return f1_loss
     else:
         raise ModuleNotFoundError('loss function not found')
+
+def positive_predictions(predictions):
+    positives = []
+    for prediction in predictions:
+        output = []
+        i = 0
+        for label in prediction:
+            if(label == 1):
+                output.append(str(i))
+            i += 1
+        positives.append(' '.join(output))
+
+    return positives
