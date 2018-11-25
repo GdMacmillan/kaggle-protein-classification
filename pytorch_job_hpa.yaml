@@ -11,13 +11,17 @@ spec:
         spec:
           containers:
             - name: pytorch
-              image: gcr.io/optfit-kaggle/human-protein-atlas:latest
+              image: gcr.io/optfit-kaggle/human-protein-atlas-cuda9:latest
+              resources:
+                limits:
+                  nvidia.com/gpu: 1
               volumeMounts:
-              - mountPath: /hpakf-image-data
-                name: test-volume
+                - mountPath: /hpakf-image-data
+                  name: test-volume
           volumes:
             - name: test-volume
               # This GCE PD must already exist.
               gcePersistentDisk:
-                pdName: hpakf-data
+                pdName: hpakf-data2
                 fsType: ext4
+                readOnly: true

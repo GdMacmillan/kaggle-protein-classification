@@ -2,5 +2,9 @@
 
 cd /workspace/job
 
-python -u train.py -n "basicnet01" -d "hpa" -no-cuda=False --train-images-path="/hpakf-image-data/data/train_images" --test-images-path="/hpakf-image-data/data/test_images"
-# sleep 100000
+git config --global user.email "you@example.com"
+git config --global user.name "Your Name"
+git remote set-url origin https://github.com/DMLSG/human-protein-atlas.git
+git pull
+
+./train_script.sh

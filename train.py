@@ -32,7 +32,7 @@ def main():
     parser.add_argument('--nEpochs', type=int, default=10) # 300
     parser.add_argument('--sEpoch', type=int, default=1)
     parser.add_argument('--nSubsample', type=int, default=0)
-    parser.add_argument('--no-cuda', default=True, action='store_true')
+    parser.add_argument('--use-cuda', type=str, default='no')
     parser.add_argument('--nGPU', type=int, default=0)
     parser.add_argument('--save')
     parser.add_argument('--seed', type=int, default=50)
@@ -40,12 +40,14 @@ def main():
     parser.add_argument('--crit', type=str, default='f1', choices=('bce', 'f1'))
     args = parser.parse_args()
 
-    args.cuda = not args.no_cuda and torch.cuda.is_available()
-    if args.cuda and arg.nGPU == 0:
+    args.cuda = args.use_cuda == 'yes' and torch.cuda.is_available()
+    if args.cuda and args.nGPU == 0:
         nGPU = 1
     else:
         nGPU = args.nGPU
 
+    print("using cuda ", args.cuda)
+    print("torch.cuda.is_available() ", torch.cuda.is_available())
     args.save = args.save or 'work/%s/%s' % (args.network_name, args.dataset_name)
     setproctitle.setproctitle(args.save)
 
