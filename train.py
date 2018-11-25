@@ -163,62 +163,65 @@ def test(args, epoch, net, devLoader, criterion, optimizer, testF):
     test_loss = 0
     acc = prec = rec = 0
     incorrect = 0
-    for batch_idx, data in enumerate(devLoader):
-        inputs, labels = data['image'], data['labels']
-        if args.cuda:
-            inputs = inputs.cuda()
-            labels = labels.cuda()
-        outputs = net(inputs)
-        test_loss += criterion(outputs, labels)
+
+    with torch.no_grad():
+        for batch_idx, data in enumerate(devLoader):
+            inputs, labels = data['image'], data['labels']
+            if args.cuda:
+                inputs = inputs.cuda()
+                labels = labels.cuda()
+            outputs = net(inputs)
+            test_loss += criterion(outputs, labels)
+            if args.multilabel:
+                pred = outputs.data.gt(0.5)
+                tp = (pred + labels.data.byte()).eq(2).sum().float()
+                fp = (pred - labels.data.byte()).eq(1).sum().float()
+                fn = (pred - labels.data.byte()).eq(255).sum().float()
+                tn = (pred + labels.data.byte()).eq(0).sum().float()
+                acc += (tp + tn) / (tp + tn + fp + fn)
+                try:
+                    prec += tp / (tp + fp)
+                except ZeroDivisionError:
+                    prec += 0.0
+                try:
+                    rec += tp / (tp + fn)
+                except ZeroDivisionError:
+                    rec += 0.0
+            else:
+                pred = outputs.data.max(1)[1] # get the index of the max log-probability
+                incorrect += pred.ne(labels.data).sum()
+        test_loss /= len(devLoader)
+        acc /= len(devLoader)
+        prec /= len(devLoader)
+        rec /= len(devLoader)
         if args.multilabel:
-            pred = outputs.data.gt(0.5)
-            tp = (pred + labels.data.byte()).eq(2).sum().float()
-            fp = (pred - labels.data.byte()).eq(1).sum().float()
-            fn = (pred - labels.data.byte()).eq(255).sum().float()
-            tn = (pred + labels.data.byte()).eq(0).sum().float()
-            acc += (tp + tn) / (tp + tn + fp + fn)
-            try:
-                prec += tp / (tp + fp)
-            except ZeroDivisionError:
-                prec += 0.0
-            try:
-                rec += tp / (tp + fn)
-            except ZeroDivisionError:
-                rec += 0.0
+            print('\nTest set: Loss: {:.4f}, Acc: {:.4f}, Prec: {:.4f}, Rec: {:.4f}\n'.format(
+                test_loss, acc, prec, rec))
+            testF.write('{},{},{},{},{}\n'.format(epoch, test_loss, acc, prec, rec))
         else:
-            pred = outputs.data.max(1)[1] # get the index of the max log-probability
-            incorrect += pred.ne(labels.data).sum()
-    test_loss /= len(devLoader)
-    acc /= len(devLoader)
-    prec /= len(devLoader)
-    rec /= len(devLoader)
-    if args.multilabel:
-        print('\nTest set: Loss: {:.4f}, Acc: {:.4f}, Prec: {:.4f}, Rec: {:.4f}\n'.format(
-            test_loss, acc, prec, rec))
-        testF.write('{},{},{},{},{}\n'.format(epoch, test_loss, acc, prec, rec))
-    else:
-        nTotal = len(devLoader.dataset)
-        err = 100. * incorrect / nTotal
-        print('\nTest set: Average loss: {:.4f}, Error: {}/{} ({:.0f}%)\n'.format(
-        test_loss, incorrect, nTotal, err))
-        testF.write('{},{},{}\n'.format(epoch, test_loss, err))
-    testF.flush()
+            nTotal = len(devLoader.dataset)
+            err = 100. * incorrect / nTotal
+            print('\nTest set: Average loss: {:.4f}, Error: {}/{} ({:.0f}%)\n'.format(
+            test_loss, incorrect, nTotal, err))
+            testF.write('{},{},{}\n'.format(epoch, test_loss, err))
+        testF.flush()
 
 def predict(args, net, dataloader):
     net.eval()
     csv_path = os.path.join(args.save, 'test-images-predictions.csv')
 
-    with(open(csv_path, 'w')) as csv_file:
-        predictions_writer = csv.writer(csv_file, delimiter=',')
-        predictions_writer.writerow(['Id', 'Predicted'])
-        for batch_index, data in enumerate(dataloader):
-            images = data['image']
-            image_ids = data['image_id']
-            if args.cuda:
-                images = images.cuda()
-            predictions = net(images).data.gt(0.5)
-            preds = positive_predictions(predictions)
-            predictions_writer.writerows(list(zip(image_ids, preds)))
+    with torch.no_grad():
+        with(open(csv_path, 'w')) as csv_file:
+            predictions_writer = csv.writer(csv_file, delimiter=',')
+            predictions_writer.writerow(['Id', 'Predicted'])
+            for batch_index, data in enumerate(dataloader):
+                images = data['image']
+                image_ids = data['image_id']
+                if args.cuda:
+                    images = images.cuda()
+                predictions = net(images).data.gt(0.5)
+                preds = positive_predictions(predictions)
+                predictions_writer.writerows(list(zip(image_ids, preds)))
 
 def adjust_opt(optAlg, optimizer, epoch):
     if optAlg == 'sgd':
