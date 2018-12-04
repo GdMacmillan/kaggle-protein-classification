@@ -1,32 +1,65 @@
 import csv
 import numpy as np
 
-from torchvision import transforms
+from torchvision import transforms, models
 from torch.utils.data import DataLoader
-from tqdm import tqdm
+from torch.nn import Linear, Sequential, Sigmoid
 
-from .rather_small_net import Net
+from .nets import Net, LastLayer
 from .loss_functions import f1_loss, binary_cross_entropy_with_logits
 from .transforms import *
 from .datasets import TrainImageDataset, TestImageDataset
 
-def get_transform():
-    return transforms.Compose(
-                    [CombineColors(),
-                     ToTensor()])
+def get_transforms(pretrained=False):
+    if pretrained:
+        transform = {
+            TRAIN: transforms.Compose(
+                            [CombineColors(pretrained),
+                             RandomResizedCrop(224),
+                             RandomHorizontalFlip(),
+                             ToTensor(),
+                             Normalize(mean=[0.485, 0.456, 0.406],
+                                        std=[0.229, 0.224, 0.225])
+                            ]
+            ),
+            DEV: transforms.Compose(
+                            [CombineColors(pretrained),
+                             Resize(256),
+                             CenterCrop(224),
+                             ToTensor(),
+                             Normalize(mean=[0.485, 0.456, 0.406],
+                                        std=[0.229, 0.224, 0.225])
+                            ]
+            )
+        }
+    else:
+        transform = {
+            TRAIN: transforms.Compose(
+                            [CombineColors(),
+                             ToTensor()
+                             ]
+            ),
+            DEV: transforms.Compose(
+                            [CombineColors(),
+                             ToTensor()
+                             ]
+            )
+        }
 
-def get_dataset(image_dir, label_file, train=True, idxs=None):
-    transform = get_transform()
+    return transform
+
+def get_dataset(image_dir, label_file, train=True, idxs=None, pretrained=False):
+    transform = get_transforms(pretrained)
     if train:
         dataset = TrainImageDataset(
                          image_dir=image_dir,
                          label_file=label_file,
-                         transform=transform,
+                         transform=transform['TRAIN'],
                          idxs=idxs)
     else:
         dataset = TestImageDataset(
                          image_dir=image_dir,
-                         transform=transform,
+                         transform=transform['DEV'],
                          idxs=idxs)
     return dataset
 
@@ -37,14 +70,16 @@ def get_prediction_dataloader(image_dir, **kwargs):
     )
 
 def get_prediction_dataset(image_dir):
+    transform = get_transforms()
     return TestImageDataset(
         image_dir=image_dir,
-        transform=get_transform())
+        transforms=transform)
 
 def get_train_test_split(train_image_dir,
                          train_image_csv,
                          val_split,
                          n_subsample,
+                         pretrained
                          **kwargs
                          ):
     with open(train_image_csv, 'r') as f:
@@ -58,26 +93,38 @@ def get_train_test_split(train_image_dir,
         train_idxs = arr[:int(n_images * (1 - val_split))]
         dev_idxs = arr[int(n_images * (1 - val_split)):]
 
-    trainset = get_dataset(train_image_dir, train_image_csv, idxs=train_idxs)
-    devset = get_dataset(train_image_dir, train_image_csv, idxs=dev_idxs)
+    trainset = get_dataset(train_image_dir,
+                            train_image_csv,
+                            idxs=train_idxs,
+                            pretrained=pretrained)
+    devset = get_dataset(train_image_dir,
+                            train_image_csv,
+                            idxs=dev_idxs,
+                            pretrained=pretrained)
 
-    # trainset = []
-    # testset = []
-    # print('getting training set...')
-    # for i in tqdm(train_idxs):
-    #     sample = dataset[i]
-    #     trainset.append(sample)
-    # print('getting testing set...')
-    # for i in tqdm(test_idxs):
-    #     sample = dataset[i]
-    #     testset.append(sample)
     trainloader = DataLoader(trainset, shuffle=True, **kwargs)
     devloader = DataLoader(devset, shuffle=False, **kwargs)
     return trainloader, devloader
 
-def get_network(pretrained=False):
-    if pretrained:
-        pass # can't pass pretrained net yet
+def get_network(network_name, pretrained=False):
+    if network_name not in ['vgg16']:
+        pretrained = False # no pretrained weights for non torchvision models
+
+    if network_name == 'vgg16':
+        vgg16 = models.vgg16(pretrained)
+        print(vgg16.classifier[6].out_features) # 1000
+
+        # Freeze training for all layers
+        # Newly created modules have require_grad=True by default
+        if pretrained:
+            for param in vgg16.features.parameters():
+                param.require_grad = False
+
+        num_features = vgg16.classifier[6].in_features
+        features = list(vgg16.classifier.children())[:-1] # Remove last layer
+        features.extend([Linear(num_features, 28), Sigmoid()]) # Add our layer with 28 outputs
+        vgg16.classifier = Sequential(*features) # Replace the model classifier
+        return vgg16
     else:
         net = Net()
         return net

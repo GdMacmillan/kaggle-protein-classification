@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 
 from torch.utils.data import Dataset
-from skimage import io, transform, img_as_float
+from skimage import io, img_as_float # transform
 
 def to_one_hot(df):
     tmp = df.Target.str.get_dummies(sep=' ')

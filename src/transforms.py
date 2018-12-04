@@ -1,8 +1,13 @@
 import numpy as np
 import torch
 
+from torchvision import transforms
+
+
 class CombineColors(object):
     """Combines the the image in a sample to a given size."""
+    def __init__(self, pretrained=False):
+        self.pretrained = pretrained
 
     def __call__(self, sample):
         img_name = sample['image_id']
@@ -11,9 +16,75 @@ class CombineColors(object):
         img_green = sample['image_green']
         img_yellow = sample['image_yellow']
         labels = sample['labels']
-        image = np.dstack((img_red, img_blue, img_green, img_yellow))
+        if self.pretrained:
+            image = np.dstack((img_red, img_green, img_blue))
+        else:
+            image = np.dstack((img_red, img_blue, img_green, img_yellow))
 
         return {'image': image, 'labels': labels, 'image_id': img_name}
+
+
+class RandomResizedCrop(object):
+    """Convert ndarrays in sample to Tensors."""
+    def __init__(self, size=224):
+        self.size = size
+
+    def __call__(self, sample):
+        img_name = sample['image_id']
+        image = sample['image']
+        labels = sample['labels']
+        image = transforms.RandomResizedCrop(self.size)(image)
+
+        return {'image': image,
+                'labels': labels,
+                'image_id': img_name}
+
+
+class RandomHorizontalFlip(object):
+    """Convert ndarrays in sample to Tensors."""
+
+    def __call__(self, sample):
+        img_name = sample['image_id']
+        image = sample['image']
+        labels = sample['labels']
+        image = transforms.RandomHorizontalFlip()(image)
+
+        return {'image': image,
+                'labels': labels,
+                'image_id': img_name}
+
+
+class Resize(object):
+    """Convert ndarrays in sample to Tensors."""
+    def __init__(self, size=256):
+        self.size = size
+
+    def __call__(self, sample):
+        img_name = sample['image_id']
+        image = sample['image']
+        labels = sample['labels']
+        image = transforms.Resize(self.size)(image)
+
+        return {'image': image,
+                'labels': labels,
+                'image_id': img_name}
+
+
+class CenterCrop(object):
+    """Convert ndarrays in sample to Tensors."""
+    def __init__(self, size=224):
+        self.size = size
+
+    def __call__(self, sample):
+        img_name = sample['image_id']
+        image = sample['image']
+        labels = sample['labels']
+        image = transforms.CenterCrop(self.size)(image)
+
+        return {'image': image,
+                'labels': labels,
+                'image_id': img_name}
+
 
 class ToTensor(object):
     """Convert ndarrays in sample to Tensors."""
@@ -29,6 +100,7 @@ class ToTensor(object):
         return {'image': torch.from_numpy(image).type(torch.FloatTensor),
                 'labels': torch.from_numpy(labels).type(torch.FloatTensor),
                 'image_id': img_name}
+
 
 class Normalize(object):
     """Normalize a tensor image with mean and standard deviation.

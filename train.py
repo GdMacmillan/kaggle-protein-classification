@@ -68,13 +68,14 @@ def main():
                                     args.train_csv_path,
                                     val_split=VALIDATION_SPLIT,
                                     n_subsample=args.nSubsample,
+                                    pretrained=args.pretrained
                                     **kwargs)
 
     if args.load:
         print("Loading network: {}".format(args.load))
         net = torch.load(args.load)
     else:
-        net = get_network(args.pretrained)
+        net = get_network(args.network_name, args.pretrained)
 
     if args.data_parallel:
         net = torch.nn.DataParallel(net)
@@ -100,6 +101,7 @@ def main():
 
     for epoch in range(args.sEpoch, args.nEpochs + args.sEpoch):
         adjust_opt(args.opt, optimizer, epoch)
+        unfreeze_weights(args.pretrained, net, epoch)
         train(args, epoch, net, trainLoader, criterion, optimizer, trainF)
         test(args, epoch, net, devLoader, criterion, optimizer, testF)
         torch.save(net, os.path.join(args.save, '%d.pth' % epoch))
@@ -234,6 +236,11 @@ def adjust_opt(optAlg, optimizer, epoch):
 
         for param_group in optimizer.param_groups:
             param_group['lr'] = lr
+
+def unfreeze_weights(pretrained, model, epoch):
+    if (pretrained) and epoch > (100):
+        for param in model.features.parameters():
+            param.require_grad = True
 
 if __name__ == '__main__':
     main()
