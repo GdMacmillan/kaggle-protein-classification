@@ -11,10 +11,10 @@ spec:
         spec:
           containers:
             - name: pytorch
-              image: gcr.io/optfit-kaggle/human-protein-atlas-cuda9:latest
+              image: gcr.io/optfit-kaggle/human-protein-atlas:latest
               env:
               - name: BRANCH
-                value: "master" # set to your branch
+                value: "gordon" # set to your branch
               resources:
                 limits:
                   nvidia.com/gpu: 1

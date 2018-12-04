@@ -68,7 +68,7 @@ def main():
                                     args.train_csv_path,
                                     val_split=VALIDATION_SPLIT,
                                     n_subsample=args.nSubsample,
-                                    pretrained=args.pretrained
+                                    pretrained=args.pretrained,
                                     **kwargs)
 
     if args.load:

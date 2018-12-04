@@ -5,7 +5,7 @@ from torchvision import transforms, models
 from torch.utils.data import DataLoader
 from torch.nn import Linear, Sequential, Sigmoid
 
-from .nets import Net, LastLayer
+from .nets import Net
 from .loss_functions import f1_loss, binary_cross_entropy_with_logits
 from .transforms import *
 from .datasets import TrainImageDataset, TestImageDataset
@@ -13,7 +13,7 @@ from .datasets import TrainImageDataset, TestImageDataset
 def get_transforms(pretrained=False):
     if pretrained:
         transform = {
-            TRAIN: transforms.Compose(
+            'TRAIN': transforms.Compose(
                             [CombineColors(pretrained),
                              RandomResizedCrop(224),
                              RandomHorizontalFlip(),
@@ -22,7 +22,7 @@ def get_transforms(pretrained=False):
                                         std=[0.229, 0.224, 0.225])
                             ]
             ),
-            DEV: transforms.Compose(
+            'DEV': transforms.Compose(
                             [CombineColors(pretrained),
                              Resize(256),
                              CenterCrop(224),
@@ -34,12 +34,12 @@ def get_transforms(pretrained=False):
         }
     else:
         transform = {
-            TRAIN: transforms.Compose(
+            'TRAIN': transforms.Compose(
                             [CombineColors(),
                              ToTensor()
                              ]
             ),
-            DEV: transforms.Compose(
+            'DEV': transforms.Compose(
                             [CombineColors(),
                              ToTensor()
                              ]
@@ -79,7 +79,7 @@ def get_train_test_split(train_image_dir,
                          train_image_csv,
                          val_split,
                          n_subsample,
-                         pretrained
+                         pretrained,
                          **kwargs
                          ):
     with open(train_image_csv, 'r') as f:
