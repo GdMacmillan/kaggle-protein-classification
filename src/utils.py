@@ -15,6 +15,7 @@ def get_transforms(pretrained=False):
         transform = {
             'TRAIN': transforms.Compose(
                             [CombineColors(pretrained),
+                             ToPILImage(),
                              RandomResizedCrop(224),
                              RandomHorizontalFlip(),
                              ToTensor(),
@@ -24,6 +25,7 @@ def get_transforms(pretrained=False):
             ),
             'DEV': transforms.Compose(
                             [CombineColors(pretrained),
+                             ToPILImage(),
                              Resize(256),
                              CenterCrop(224),
                              ToTensor(),
@@ -36,12 +38,12 @@ def get_transforms(pretrained=False):
         transform = {
             'TRAIN': transforms.Compose(
                             [CombineColors(),
-                             ToTensor()
+                             NumpyToTensor()
                              ]
             ),
             'DEV': transforms.Compose(
                             [CombineColors(),
-                             ToTensor()
+                             NumpyToTensor()
                              ]
             )
         }
@@ -49,18 +51,24 @@ def get_transforms(pretrained=False):
     return transform
 
 def get_dataset(image_dir, label_file, train=True, idxs=None, pretrained=False):
+    if pretrained:
+        using_pil = True
+    else:
+        using_pil = False
     transform = get_transforms(pretrained)
     if train:
         dataset = TrainImageDataset(
                          image_dir=image_dir,
                          label_file=label_file,
                          transform=transform['TRAIN'],
-                         idxs=idxs)
+                         idxs=idxs,
+                         using_pil=using_pil)
     else:
         dataset = TestImageDataset(
                          image_dir=image_dir,
                          transform=transform['DEV'],
-                         idxs=idxs)
+                         idxs=idxs,
+                         using_pil=using_pil)
     return dataset
 
 def get_prediction_dataloader(image_dir, **kwargs):

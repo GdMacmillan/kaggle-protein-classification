@@ -24,6 +24,22 @@ class CombineColors(object):
         return {'image': image, 'labels': labels, 'image_id': img_name}
 
 
+class ToPILImage(object):
+    """Convert ndarrays in sample to Tensors."""
+    def __init__(self, mode=None):
+        self.mode = mode
+
+    def __call__(self, sample):
+        img_name = sample['image_id']
+        image = sample['image']
+        labels = sample['labels']
+        image = transforms.ToPILImage(self.mode)(image)
+
+        return {'image': image,
+                'labels': labels,
+                'image_id': img_name}
+
+
 class RandomResizedCrop(object):
     """Convert ndarrays in sample to Tensors."""
     def __init__(self, size=224):
@@ -93,12 +109,30 @@ class ToTensor(object):
         img_name = sample['image_id']
         image = sample['image']
         labels = sample['labels']
+        image = transforms.ToTensor()(image)
+
+        return {'image': image.type(torch.FloatTensor),
+                'labels': torch. \
+                    from_numpy(labels).type(torch.FloatTensor),
+                'image_id': img_name}
+
+
+class NumpyToTensor(object):
+    """Convert ndarrays in sample to Tensors."""
+
+    def __call__(self, sample):
+        img_name = sample['image_id']
+        image = sample['image']
+        labels = sample['labels']
         # swap color axis because
         # numpy image: H x W x C
         # torch image: C X H X W
         image = image.transpose((2, 0, 1))
-        return {'image': torch.from_numpy(image).type(torch.FloatTensor),
-                'labels': torch.from_numpy(labels).type(torch.FloatTensor),
+
+        return {'image': torch. \
+                    from_numpy(image).type(torch.FloatTensor),
+                'labels': torch. \
+                    from_numpy(labels).type(torch.FloatTensor),
                 'image_id': img_name}
 
 
@@ -129,7 +163,8 @@ class Normalize(object):
         img_name = sample['image_id']
         image = sample['image']
         labels = sample['labels']
-        transforms.Normalize(self.mean, self.std)(image)
+        image = transforms.Normalize(self.mean, self.std)(image)
+
         return {'image': image,
                 'labels': labels,
                 'image_id': img_name}
