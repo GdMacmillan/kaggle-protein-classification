@@ -3,7 +3,7 @@ import numpy as np
 
 from torchvision import transforms, models
 from torch.utils.data import DataLoader
-from torch.nn import Linear, Sequential, Sigmoid
+from torch.nn import Linear, Sequential, Sigmoid, BCEWithLogitsLoss
 
 from .nets import Net
 from .loss_functions import f1_loss, binary_cross_entropy_with_logits
@@ -114,7 +114,7 @@ def get_train_test_split(train_image_dir,
     devloader = DataLoader(devset, shuffle=False, **kwargs)
     return trainloader, devloader
 
-def get_network(network_name, pretrained=False):
+def get_network(network_name, pretrained=False, lf='bce'):
     if network_name not in ['vgg16']:
         pretrained = False # no pretrained weights for non torchvision models
 
@@ -130,7 +130,10 @@ def get_network(network_name, pretrained=False):
 
         num_features = vgg16.classifier[6].in_features
         features = list(vgg16.classifier.children())[:-1] # Remove last layer
-        features.extend([Linear(num_features, 28), Sigmoid()]) # Add our layer with 28 outputs
+        if lf == 'bce':
+            features.extend([Linear(num_features, 28)]) # Add our layer with 28 outputs. activation in loss function 
+        else:
+            features.extend([Linear(num_features, 28), Sigmoid()])
         vgg16.classifier = Sequential(*features) # Replace the model classifier
         return vgg16
     else:
@@ -139,7 +142,7 @@ def get_network(network_name, pretrained=False):
 
 def get_loss_function(lf='bce'):
     if lf == 'bce':
-        return binary_cross_entropy_with_logits
+        return BCEWithLogitsLoss()
     elif lf == 'f1':
         return f1_loss
     else:

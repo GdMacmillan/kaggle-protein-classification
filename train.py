@@ -29,7 +29,7 @@ def main():
     parser.add_argument('--train-csv-path', type=str, default=default_csv)
     parser.add_argument('-l', '--load')
     parser.add_argument('--batchSz', type=int, default=32) # 64
-    parser.add_argument('--nEpochs', type=int, default=10) # 300
+    parser.add_argument('--nEpochs', type=int, default=1) # 300
     parser.add_argument('--sEpoch', type=int, default=1)
     parser.add_argument('--nSubsample', type=int, default=0)
     parser.add_argument('--use-cuda', type=str, default='no')
@@ -37,7 +37,7 @@ def main():
     parser.add_argument('--save')
     parser.add_argument('--seed', type=int, default=50)
     parser.add_argument('--opt', type=str, default='sgd', choices=('sgd', 'adam', 'rmsprop'))
-    parser.add_argument('--crit', type=str, default='f1', choices=('bce', 'f1'))
+    parser.add_argument('--crit', type=str, default='bce', choices=('bce', 'f1'))
     args = parser.parse_args()
 
     args.cuda = args.use_cuda == 'yes' and torch.cuda.is_available()
