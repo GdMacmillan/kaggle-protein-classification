@@ -51,12 +51,15 @@ def main():
                             os.path.isfile(os.path.join(load_path, f)) \
                             and '.pth' in f]
         current = max([int(i.replace('.pth', '')) for i in files])
-        if args.cuda:
-            net = torch.load(os.path.join(load_path, str(current) + '.pth'))
-        else:
-            net = torch.load(os.path.join(load_path, str(current) + '.pth'), map_location='cpu')
+        model_path = os.path.join(load_path, str(current) + '.pth')
+        net = torch.load(model_path)
 
-    predF = open(os.path.join(args.save, 'predict.csv'), 'a')
+    if args.cuda:
+        net = net.cuda()
+
+    predict_csv_path = os.path.join(args.save, 'predict.csv')
+    os.remove(predict_csv_path) # remove if already created
+    predF = open(predict_csv_path 'a')
 
     predict(args, net, testLoader, predF)
 

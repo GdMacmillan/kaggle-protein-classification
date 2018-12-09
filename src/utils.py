@@ -119,7 +119,7 @@ def get_network(network_name, pretrained=False, lf='bce'):
         # Newly created modules have require_grad=True by default
         if pretrained:
             for param in vgg16.features.parameters():
-                param.require_grad = False
+                param.require_grad = True
 
         num_features = vgg16.classifier[6].in_features
         features = list(vgg16.classifier.children())[:-1] # Remove last layer
@@ -163,7 +163,6 @@ def positive_predictions(predictions):
     return positives
 
 def predict(args, net, dataLoader, predF):
-    net.cpu()
     net.eval()
 
     with torch.no_grad():
@@ -175,7 +174,7 @@ def predict(args, net, dataLoader, predF):
 
             outputs = net(inputs)
             pred = outputs.data.gt(0.5)
-            preds = positive_predictions(predictions)
+            preds = positive_predictions(pred)
             for _ in zip(image_ids, preds):
                 predF.write(",".join(_) + '\n')
                 predF.flush()
