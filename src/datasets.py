@@ -10,6 +10,11 @@ def to_one_hot(df):
     tmp.columns = map(int, tmp.columns)
     return df.join(tmp.sort_index(axis=1))
 
+def get_image_ids_from_dir_contents(image_dir):
+    all_images = [name for name in os.listdir(image_dir) \
+                  if os.path.isfile(os.path.join(image_dir, name))]
+    return list(set([name.split('_')[0] for name in all_images]))
+
 class TrainImageDataset(Dataset):
     """Fluorescence microscopy images of protein structures training dataset"""
 
@@ -83,15 +88,10 @@ class TestImageDataset(Dataset):
             transform (callable, optional): Optional transform to be applied
                 on a sample.
         """
-        self.image_ids = self.get_image_ids_from_dir_contents(image_dir)
+        self.image_ids = get_image_ids_from_dir_contents(image_dir)
         self.image_dir = image_dir
         self.transform = transform
         self.using_pil = using_pil
-
-    def get_image_ids_from_dir_contents(self, image_dir):
-        all_images = [name for name in os.listdir(image_dir) \
-                      if os.path.isfile(os.path.join(image_dir, name))]
-        return list(set([name.split('_')[0] for name in all_images]))
 
     def __len__(self):
         return len(self.image_ids)
