@@ -56,9 +56,6 @@ def main():
         else:
             net = torch.load(os.path.join(load_path, str(current) + '.pth'), map_location='cpu')
 
-    if args.data_parallel:
-        net = torch.nn.DataParallel(net)
-
     predF = open(os.path.join(args.save, 'predict.csv'), 'a')
 
     predict(args, net, testLoader, predF)

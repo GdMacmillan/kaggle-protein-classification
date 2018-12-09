@@ -163,6 +163,7 @@ def positive_predictions(predictions):
     return positives
 
 def predict(args, net, dataLoader, predF):
+    net.cpu()
     net.eval()
 
     with torch.no_grad():
@@ -171,6 +172,7 @@ def predict(args, net, dataLoader, predF):
             inputs, image_ids = data['image'], data['image_id']
             if args.cuda:
                 inputs = inputs.cuda()
+
             outputs = net(inputs)
             pred = outputs.data.gt(0.5)
             preds = positive_predictions(predictions)
