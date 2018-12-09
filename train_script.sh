@@ -10,4 +10,4 @@ python -u test.py -n "vgg16" -d "hpa" -p "True" --test-images-path="/hpakf-image
 
 echo "*** testing complete. pod will stop in 10 minutes ***"
 
-sleep 7200
+sleep 600
