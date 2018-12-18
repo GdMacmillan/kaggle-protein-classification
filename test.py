@@ -59,7 +59,7 @@ def main():
 
     predict_csv_path = os.path.join(args.save, 'predict.csv')
     os.remove(predict_csv_path) # remove if already created
-    predF = open(predict_csv_path 'a')
+    predF = open(predict_csv_path, 'a')
 
     predict(args, net, testLoader, predF)
 
