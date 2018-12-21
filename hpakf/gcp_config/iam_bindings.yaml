@@ -34,7 +34,7 @@ bindings:
   # VM service account is used to write monitoring data
   - roles/monitoring.metricWriter
   # VM service account is used to pull image from gcr
-  - roles/storage.objectAdmin
+  - roles/storage.objectViewer
 - members:
   - user:barton@optfit.ai
   - user:marksliva8@gmail.com
