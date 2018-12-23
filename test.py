@@ -6,11 +6,16 @@ import os
 import setproctitle
 import shutil
 import csv
+import datetime
+import pytz
+from google.cloud import storage
 
 # internals
 from src import *
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+CLOUD_STORAGE_BUCKET = os.environ['CLOUD_STORAGE_BUCKET'] if('CLOUD_STORAGE_BUCKET' in os.environ) else ""
+BRANCH_NAME = os.environ['BRANCH'] if('BRANCH' in os.environ) else "probably-master"
 
 default_test_images = os.path.join(BASE_DIR, 'data/test_images')
 
@@ -57,13 +62,26 @@ def main():
     if args.cuda:
         net = net.cuda()
 
-    predict_csv_path = os.path.join(args.save, 'predict.csv')
-    os.remove(predict_csv_path) # remove if already created
+    now = datetime.datetime.now(tz=pytz.timezone("US/Mountain")).strftime("%Y-%m-%d___%H:%M:%S")
+    predict_csv_path = os.path.join(args.save, '{}_{}_predict.csv'.format(BRANCH_NAME, now))
+
+    try:
+        os.remove(predict_csv_path) # remove if already created
+    except:
+        print("predict_csv_path does not exist")
+
     predF = open(predict_csv_path, 'a')
 
     predict(args, net, testLoader, predF)
 
     predF.close
+
+    if len(CLOUD_STORAGE_BUCKET) != 0:
+        storage_client = storage.Client()
+        bucket = storage_client.get_bucket(CLOUD_STORAGE_BUCKET)
+        blob = bucket.blob(predict_csv_path)
+
+        blob.upload_from_filename(predict_csv_path)
 
 if __name__ == '__main__':
     main()

@@ -14,7 +14,14 @@ spec:
               image: gcr.io/optfit-kaggle/human-protein-atlas:latest
               env:
               - name: BRANCH
-                value: "gordon" # set to your branch
+                value: "master" # set to your branch
+              - name: CLOUD_STORAGE_BUCKET
+                value: "hpa-experiments" # where the test results will be uploaded
+              - name: GOOGLE_APPLICATION_CREDENTIALS_JSON_FILE
+                valueFrom:
+                  secretKeyRef:
+                    name: gcs-service-account
+                    key: gcs-service-account.json
               resources:
                 limits:
                   nvidia.com/gpu: 1
