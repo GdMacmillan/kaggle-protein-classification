@@ -123,7 +123,13 @@ def train(args, epoch, net, trainLoader, criterion, optimizer, trainF):
 
         # forward + backward + optimize
         outputs = net(inputs)
-        loss = criterion(outputs, labels)
+
+        if args.crit == 'crl':
+            loss_inputs = (outputs, labels, inputs)
+        else:
+            loss_inputs = (outputs, labels)
+
+        loss = criterion(*loss_inputs)
         loss.backward()
         optimizer.step()
         nProcessed += len(data)

@@ -1,5 +1,4 @@
-from torch import sum, cumsum, where, zeros
-
+import torch
 import numpy as np
 import torch.nn as nn
 import torch.nn.functional as F
@@ -18,10 +17,10 @@ def f1_loss(input, target, epsilon=1E-8):
     if not target.is_same_size(input):
         raise ValueError("Target size ({}) must be the same as input size ({})".format(target.size(), input.size()))
 
-    tp = sum(input * target, dim=0) # size = [1, ncol]
-    tn = sum((1 - target) * (1 - input), dim=0) # size = [1, ncol]
-    fp = sum((1 - target) * input, dim=0) # size = [1, ncol]
-    fn = sum(target * (1 - input), dim=0) # size = [1, ncol]
+    tp = torch.sum(input * target, dim=0) # size = [1, ncol]
+    tn = torch.sum((1 - target) * (1 - input), dim=0) # size = [1, ncol]
+    fp = torch.sum((1 - target) * input, dim=0) # size = [1, ncol]
+    fn = torch.sum(target * (1 - input), dim=0) # size = [1, ncol]
     p = tp / (tp + fp + epsilon)
     r = tp / (tp + fn + epsilon)
     f1 = 2 * p * r / (p + r + epsilon)
@@ -29,12 +28,10 @@ def f1_loss(input, target, epsilon=1E-8):
     return 1 - f1.mean()
 
 def get_minority_classes(y, num_classes):
-    ix = np.argsort(y.sum(0))
-    sorted_hjk = y.sum(0)[ix]
-    mask = cumsum(sorted_hjk, 0) <= .5 * num_classes
+    sorted_hjk, ix = y.sum(0).sort()
+    mask = torch.cumsum(sorted_hjk, 0) <= .5 * num_classes
     sorted_hjk = sorted_hjk[mask]
     ix = ix[mask]
-
     return ix[np.argsort(ix)][sorted_hjk[np.argsort(ix)] > 1]
 
 
@@ -51,33 +48,48 @@ class TripletLoss(nn.Module):
         self.margin = margin
 
     def forward(self, anchor, positive, negative, size_average=True):
-        distance_positive = F.l1_loss(anchor, positive, size_average=False)
-        distance_negative = F.l1_loss(anchor, negative, size_average=False)
+        distance_positive = F.l1_loss(anchor, positive, reduction='sum')
+        distance_negative = F.l1_loss(anchor, negative, reduction='sum')
         losses = F.relu(distance_positive - distance_negative + self.margin)
         return losses.mean() if size_average else losses.sum()
 
 
 class IncrementalClassRectificationLoss(nn.Module):
 
-    def __init__(self, margin, num_classes, k):
+    def __init__(self,
+        margin,
+        alpha,
+        num_classes,
+        k,
+        class_level_hard_mining=True,
+        sigmoid=True
+    ):
         super(IncrementalClassRectificationLoss, self).__init__()
 
         self.margin = margin
+        self.alpha = alpha
         self.num_classes = num_classes
         self.k = k
-        self.triplet_loss = TripletLoss(margin)
+        self.class_level_hard_mining = class_level_hard_mining
+        self.sigmoid = sigmoid
+        self.trip_loss = TripletLoss(margin)
+        self.bce = nn.BCEWithLogitsLoss()
 
     def forward(self, input, target, X):
+        if self.sigmoid:
+            input = torch.sigmoid(input)
         idxs = get_minority_classes(target, num_classes=self.num_classes)
 
         y_min = target[:, idxs]
-        preds_min = preds[:, idxs]
+        preds_min = input[:, idxs]
         y_mask = y_min == 1
         P = torch.nonzero(y_mask)
         N = torch.nonzero(~y_mask)
-        probs_P = preds_min[y_mask]
+        preds_P = preds_min[y_mask]
 
         k = self.k
+        idx_tensors = []
+        pred_tensors = []
         # would like to vectorize this
         for idx, row in enumerate(P):
             anchor_idx, anchor_class = row
@@ -97,8 +109,18 @@ class IncrementalClassRectificationLoss(nn.Module):
             a = [idx] # anchor index in P
             n_p = pos_idxs.shape[0]
             n_n = neg_idxs.shape[0]
-            grid = torch.stack(torch.meshgrid([torch.arange(0).new_tensor(a), torch.arange(n_p), torch.arange(n_n)])).reshape(-1,3).t()
-        #     print(torch.cat([P[grid[:, 0]], pos_idxs[grid[:, 1]], neg_idxs[grid[:, 2]]], 1))
-        #     print("")
-        #     print(torch.stack([probs_P[grid[:, 0]], pos_preds[grid[:, 1]], neg_preds[grid[:, 2]]], 1))
-        #     print("")
+            # create 2d array with indices for anchor, pos and neg examples
+            grid = torch.stack(torch.meshgrid([torch.Tensor(a).long(), torch.arange(n_p), torch.arange(n_n)])).reshape(3, -1).t()
+            idx_tensors.append(torch.cat([P[grid[:, 0]], pos_idxs[grid[:, 1]], neg_idxs[grid[:, 2]]], 1))
+            pred_tensors.append(torch.stack([preds_P[grid[:, 0]], pos_preds[grid[:, 1]], neg_preds[grid[:, 2]]], 1))
+
+        if self.class_level_hard_mining:
+            idx_tensors = torch.cat(idx_tensors, 0)
+            pred_tensors = torch.cat(pred_tensors, 0)
+
+        crl = self.trip_loss(pred_tensors[:, 0], pred_tensors[:, 0], pred_tensors[:, 0])
+        bce = self.bce(input, target)
+
+        loss = self.alpha * crl + (1 - self.alpha) * bce
+
+        return loss
