@@ -27,9 +27,9 @@ def f1_loss(input, target, epsilon=1E-8):
     # f1 = where(f1 != f1, zeros(f1.size()), f1)
     return 1 - f1.mean()
 
-def get_minority_classes(y, num_classes):
+def get_minority_classes(y, batchSz):
     sorted_hjk, ix = y.sum(0).sort()
-    mask = torch.cumsum(sorted_hjk, 0) <= .5 * num_classes
+    mask = torch.cumsum(sorted_hjk, 0) <= .5 * batchSz
     sorted_hjk = sorted_hjk[mask]
     ix = ix[mask]
     return ix[np.argsort(ix)][sorted_hjk[np.argsort(ix)] > 1]
@@ -59,7 +59,7 @@ class IncrementalClassRectificationLoss(nn.Module):
     def __init__(self,
         margin,
         alpha,
-        num_classes,
+        batchSz,
         k,
         class_level_hard_mining=True,
         sigmoid=True
@@ -68,7 +68,7 @@ class IncrementalClassRectificationLoss(nn.Module):
 
         self.margin = margin
         self.alpha = alpha
-        self.num_classes = num_classes
+        self.batchSz = batchSz
         self.k = k
         self.class_level_hard_mining = class_level_hard_mining
         self.sigmoid = sigmoid
@@ -78,7 +78,7 @@ class IncrementalClassRectificationLoss(nn.Module):
     def forward(self, input, target, X):
         if self.sigmoid:
             input = torch.sigmoid(input)
-        idxs = get_minority_classes(target, num_classes=self.num_classes)
+        idxs = get_minority_classes(target, batchSz=self.batchSz)
 
         y_min = target[:, idxs]
         preds_min = input[:, idxs]
