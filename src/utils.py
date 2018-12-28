@@ -6,7 +6,7 @@ from torch.utils.data import DataLoader
 from torch.nn import Linear, Sequential, Sigmoid, BCEWithLogitsLoss
 
 from .nets import Net
-from .loss_functions import f1_loss, TripletLoss
+from .loss_functions import f1_loss, TripletLoss, IncrementalClassRectificationLoss
 from .transforms import *
 from .datasets import TrainImageDataset, TestImageDataset
 
@@ -137,18 +137,17 @@ def get_network(network_name, pretrained=False, lf='bce'):
 
         return net
 
-def get_loss_function(lf='bce'):
+def get_loss_function(lf='bce', args=None):
     if lf == 'bce':
-
         return BCEWithLogitsLoss()
 
     elif lf == 'f1':
-
         return f1_loss
 
     elif lf == 'crl':
-
-        return BCEWithLogitsLoss(), TripletLoss()
+        if args:
+            return IncrementalClassRectificationLoss(*args)
+        raise ValueError('args for CRL not found')
     else:
         raise ModuleNotFoundError('loss function not found')
 
