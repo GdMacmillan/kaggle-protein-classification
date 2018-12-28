@@ -6,9 +6,10 @@ from torch.utils.data import DataLoader
 from torch.nn import Linear, Sequential, Sigmoid, BCEWithLogitsLoss
 
 from .nets import Net
-from .loss_functions import f1_loss
+from .loss_functions import f1_loss, TripletLoss
 from .transforms import *
 from .datasets import TrainImageDataset, TestImageDataset
+
 
 def get_transforms(pretrained=False):
     if pretrained:
@@ -145,6 +146,9 @@ def get_loss_function(lf='bce'):
 
         return f1_loss
 
+    elif lf == 'crl':
+
+        return BCEWithLogitsLoss(), TripletLoss()
     else:
         raise ModuleNotFoundError('loss function not found')
 
