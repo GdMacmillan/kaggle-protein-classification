@@ -33,7 +33,7 @@ def main():
     parser.add_argument('--save')
     parser.add_argument('--seed', type=int, default=50)
     parser.add_argument('--opt', type=str, default='sgd', choices=('sgd', 'adam', 'rmsprop'))
-    parser.add_argument('--crit', type=str, default='bce', choices=('bce', 'f1'))
+    parser.add_argument('--crit', type=str, default='bce', choices=('bce', 'f1', 'crl'))
     args = parser.parse_args()
 
     if args.use_cuda == 'yes' and not torch.cuda.is_available():
@@ -92,7 +92,11 @@ def main():
     else:
         raise ModuleNotFoundError('optimiser not found')
 
-    criterion = get_loss_function(args.crit)
+    if args.crit == 'crl':
+        lf_args = [0.5, 8.537058595265812e-06, args.batchSz, 3, True]
+    else:
+        lf_args = None
+    criterion = get_loss_function(args.crit, lf_args)
 
     trainF = open(os.path.join(args.save, 'train.csv'), 'a')
     testF = open(os.path.join(args.save, 'test.csv'), 'a')
@@ -123,7 +127,13 @@ def train(args, epoch, net, trainLoader, criterion, optimizer, trainF):
 
         # forward + backward + optimize
         outputs = net(inputs)
-        loss = criterion(outputs, labels)
+
+        if args.crit == 'crl':
+            loss_inputs = (outputs, labels, inputs)
+        else:
+            loss_inputs = (outputs, labels)
+
+        loss = criterion(*loss_inputs)
         loss.backward()
         optimizer.step()
         nProcessed += len(data)

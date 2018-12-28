@@ -4,3 +4,4 @@ __pycache__
 data/train_images/*
 data/test_images/*
 work
+.idea/

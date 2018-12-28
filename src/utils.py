@@ -6,9 +6,10 @@ from torch.utils.data import DataLoader
 from torch.nn import Linear, Sequential, Sigmoid, BCEWithLogitsLoss
 
 from .nets import Net
-from .loss_functions import f1_loss
+from .loss_functions import f1_loss, TripletLoss, IncrementalClassRectificationLoss
 from .transforms import *
 from .datasets import TrainImageDataset, TestImageDataset
+
 
 def get_transforms(pretrained=False):
     if pretrained:
@@ -119,7 +120,7 @@ def get_network(network_name, pretrained=False, lf='bce'):
         # Newly created modules have require_grad=True by default
         if pretrained:
             for param in vgg16.features.parameters():
-                param.require_grad = True
+                param.require_grad = False
 
         num_features = vgg16.classifier[6].in_features
         features = list(vgg16.classifier.children())[:-1] # Remove last layer
@@ -136,15 +137,17 @@ def get_network(network_name, pretrained=False, lf='bce'):
 
         return net
 
-def get_loss_function(lf='bce'):
+def get_loss_function(lf='bce', args=None):
     if lf == 'bce':
-
         return BCEWithLogitsLoss()
 
     elif lf == 'f1':
-
         return f1_loss
 
+    elif lf == 'crl':
+        if args:
+            return IncrementalClassRectificationLoss(*args)
+        raise ValueError('args for CRL not found')
     else:
         raise ModuleNotFoundError('loss function not found')
 
