@@ -93,7 +93,7 @@ def main():
         raise ModuleNotFoundError('optimiser not found')
 
     if args.crit == 'crl':
-        lf_args = [0.5, 8.537058595265812e-06, args.batchSz, 3, True]
+        lf_args = [0.5, 8.537058595265812e-06, args.batchSz, 3, True, True]
     else:
         lf_args = None
     criterion = get_loss_function(args.crit, lf_args)
