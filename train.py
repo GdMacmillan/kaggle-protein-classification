@@ -143,6 +143,8 @@ def train(args, epoch, net, trainLoader, criterion, optimizer, trainF):
 
         loss = criterion(*loss_inputs)
         loss.backward()
+        if args.distributed:
+            average_gradients(net)
         optimizer.step()
         nProcessed += len(data)
         pred = outputs.data.gt(0.5)
