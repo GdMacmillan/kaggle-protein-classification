@@ -78,12 +78,12 @@ class IncrementalClassRectificationLoss(nn.Module):
     def forward(self, input, target, X):
         idxs = get_minority_classes(target, batchSz=self.batchSz)
         if self.sigmoid:
-            sigmoid_input = torch.sigmoid(input)
-            y_min = target[:, idxs]
-            preds_min = sigmoid_input[:, idxs]
-        else:
-            y_min = target[:, idxs]
-            preds_min = input[:, idxs]
+            input = torch.sigmoid(input)
+        #     y_min = target[:, idxs]
+        #     preds_min = sigmoid_input[:, idxs]
+        # else:
+        y_min = target[:, idxs]
+        preds_min = input[:, idxs]
 
         y_mask = y_min == 1
         P = torch.nonzero(y_mask)
