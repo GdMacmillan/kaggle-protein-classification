@@ -122,7 +122,7 @@ class IncrementalClassRectificationLoss(nn.Module):
             pred_tensors = torch.cat(pred_tensors, 0)
         else:
             # TODO: implement instance level hard mining
-
+            pass
         crl = self.trip_loss(pred_tensors[:, 0], pred_tensors[:, 1], pred_tensors[:, 2])
         bce = self.bce(input, target)
 
