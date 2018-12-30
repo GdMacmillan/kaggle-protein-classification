@@ -34,6 +34,8 @@ def main():
     parser.add_argument('--seed', type=int, default=50)
     parser.add_argument('--opt', type=str, default='sgd', choices=('sgd', 'adam', 'rmsprop'))
     parser.add_argument('--crit', type=str, default='bce', choices=('bce', 'f1', 'crl'))
+    parser.add_argument('--distributed', type=bool, default=False,
+                    help='If True, use distributed data parallel training (default, False).')
     args = parser.parse_args()
 
     if args.use_cuda == 'yes' and not torch.cuda.is_available():
@@ -50,6 +52,10 @@ def main():
         nGPU = 1
     else:
         nGPU = args.nGPU
+
+    if args.distributed:
+        dist.init_process_group(backend='gloo')
+        init_print(dist.get_rank(), dist.get_world_size())
 
     print("using cuda ", args.cuda)
 
@@ -75,7 +81,9 @@ def main():
     else:
         net = get_network(args.network_name, args.pretrained)
 
-    if args.data_parallel:
+    if args.distributed:
+        net = DistributedDataParallel(net)
+    elif args.data_parallel:
         net = torch.nn.DataParallel(net)
 
     print('  + Number of params: {}'.format(sum([p.data.nelement() for p in net.parameters()])))
@@ -172,7 +180,13 @@ def test(args, epoch, net, devLoader, criterion, optimizer, testF):
                 labels = labels.cuda()
 
             outputs = net(inputs)
-            test_loss += criterion(outputs, labels)
+
+            if args.crit == 'crl':
+                loss_inputs = (outputs, labels, inputs)
+            else:
+                loss_inputs = (outputs, labels)
+
+            test_loss += criterion(*loss_inputs)
             pred = outputs.data.gt(0.5)
             tp = (pred + labels.data.byte()).eq(2).sum().float()
             fp = (pred - labels.data.byte()).eq(1).sum().float()

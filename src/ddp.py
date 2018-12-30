@@ -1,27 +1,18 @@
-#!/usr/bin/env python
-
 import os
 import sys
+
 import torch
+import torch.nn as nn
 import torch.utils.data
 import torch.utils.data.distributed
 import torch.distributed as dist
-import torch.nn as nn
-import torch.nn.functional as F
-import torch.optim as optim
 from torch._utils import _flatten_dense_tensors, _unflatten_dense_tensors
-from torch.nn.modules import Module
 
-from math import ceil
 from random import Random
 from torch.autograd import Variable
-from torchvision import datasets, transforms
 
-import datetime
 
-gbatch_size = 128
-
-class DistributedDataParallel(Module):
+class DistributedDataParallel(nn.Module):
     def __init__(self, module):
         super(DistributedDataParallel, self).__init__()
         self.module = module
@@ -45,6 +36,7 @@ class DistributedDataParallel(Module):
                     coalesced /= dist.get_world_size()
                     for buf, synced in zip(grads, _unflatten_dense_tensors(coalesced, grads)):
                         buf.copy_(synced)
+
         for param in list(self.module.parameters()):
             def allreduce_hook(*unused):
                 Variable._execution_engine.queue_callback(allreduce_params)
@@ -64,6 +56,7 @@ class DistributedDataParallel(Module):
             print("first broadcast done")
         self.needs_reduction = True
         return self.module(*inputs, **kwargs)
+
 
 class Partition(object):
     """ Dataset-like object, but only access a subset of it. """
@@ -101,43 +94,21 @@ class DataPartitioner(object):
         return Partition(self.data, self.partitions[partition])
 
 
-class Net(nn.Module):
-    """ Network architecture. """
-
-    def __init__(self):
-        super(Net, self).__init__()
-        self.conv1 = nn.Conv2d(1, 10, kernel_size=5)
-        self.conv2 = nn.Conv2d(10, 20, kernel_size=5)
-        self.conv2_drop = nn.Dropout2d()
-        self.fc1 = nn.Linear(320, 50)
-        self.fc2 = nn.Linear(50, 10)
-
-    def forward(self, x):
-        x = F.relu(F.max_pool2d(self.conv1(x), 2))
-        x = F.relu(F.max_pool2d(self.conv2_drop(self.conv2(x)), 2))
-        x = x.view(-1, 320)
-        x = F.relu(self.fc1(x))
-        x = F.dropout(x, training=self.training)
-        x = self.fc2(x)
-        return F.log_softmax(x)
-
-
-def partition_dataset(rank):
-    """ Partitioning MNIST """
-    dataset = datasets.MNIST(
-        './data{}'.format(rank),
-        train=True,
-        download=True,
-        transform=transforms.Compose([
-            transforms.ToTensor(),
-            transforms.Normalize((0.1307, ), (0.3081, ))
-        ]))
+def partition_dataset(train_set, val_set, gbatch_size):
+    """ Partitioning dataset """
     size = dist.get_world_size()
-    bsz = int(gbatch_size / float(size))
-    train_sampler = torch.utils.data.distributed.DistributedSampler(dataset)
-    train_set = torch.utils.data.DataLoader(
-        dataset, batch_size=bsz, shuffle=(train_sampler is None), sampler=train_sampler)
-    return train_set, bsz
+    batch_size = int(gbatch_size / float(size))
+    train_sampler = torch.utils.data.distributed.DistributedSampler(train_set)
+    train_loader = torch.utils.data.DataLoader(train_set,
+                                               batch_size=batch_size,
+                                               shuffle=(train_sampler is None),
+                                               sampler=train_sampler)
+    val_sampler = torch.utils.data.distributed.DistributedSampler(val_set)
+    val_loader = torch.utils.data.DataLoader(val_set, batch_size=batch_size,
+                                             shuffle=(val_sampler is None),
+                                             sampler=val_sampler)
+    return train_loader, val_loader, batch_size
+
 
 def average_gradients(model):
     """ Gradient averaging. """
@@ -147,42 +118,24 @@ def average_gradients(model):
         param.grad.data /= size
 
 
-def run(rank, size):
-    """ Distributed Synchronous SGD Example """
-    torch.manual_seed(1234)
-    train_set, bsz = partition_dataset(rank)
-    model = Net()
-    model = model.cuda()
-    model = DistributedDataParallel(model)
-    optimizer = optim.SGD(model.parameters(), lr=0.01, momentum=0.5)
+def init_print(rank: int, size: int, debug_print: bool = True):
+    """
+    Creates new stdout to display rank and size for distributed training for
+    simpler/clearer monitoring.
 
-    num_batches = ceil(len(train_set.dataset) / float(bsz))
-    print("num_batches = ", num_batches)
-    time_start = datetime.datetime.now()
-    for epoch in range(3):
-        epoch_loss = 0.0
-        for data, target in train_set:
-            data, target = Variable(data).cuda(), Variable(target).cuda()
-            optimizer.zero_grad()
-            output = model(data)
-            loss = F.nll_loss(output, target)
-            epoch_loss += loss.item()
-            loss.backward()
-            average_gradients(model)
-            optimizer.step()
-        print('Epoch {} Loss {:.6f} Global batch size {} on {} ranks'.format(
-                  epoch, epoch_loss / num_batches, gbatch_size, dist.get_world_size()))
-    print("training time=",datetime.datetime.now() - time_start)
-
-def init_print(rank, size, debug_print=True):
+    Args:
+        rank (int): rank of machine in distributed process
+        size (int): total number of machines in distributed process
+        debug_print (bool): If False, mutes stdout from all nodes except
+            master. Default is True.
+    """
     if not debug_print:
-        """ In case run on hundreds of nodes, you may want to mute all the nodes except master """
         if rank > 0:
             sys.stdout = open(os.devnull, 'w')
             sys.stderr = open(os.devnull, 'w')
     else:
-        # labelled print with info of [rank/size]
         old_out = sys.stdout
+
         class LabeledStdout:
             def __init__(self, rank, size):
                 self._r = rank
@@ -196,16 +149,3 @@ def init_print(rank, size, debug_print=True):
                     old_out.write('[%d/%d] %s' % (self._r, self._s, x))
 
         sys.stdout = LabeledStdout(rank, size)
-
-if __name__ == "__main__":
-    print("\n======= CUDA INFO =======")
-    print("CUDA Availibility:", torch.cuda.is_available())
-    if(torch.cuda.is_available()):
-        print("CUDA Device Name:", torch.cuda.get_device_name(0))
-        print("CUDA Version:", torch.version.cuda)
-    print("=========================\n")
-    dist.init_process_group(backend='mpi')
-    size = dist.get_world_size()
-    rank = dist.get_rank()
-    init_print(rank, size)
-    run(rank, size)

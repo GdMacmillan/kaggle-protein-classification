@@ -1,0 +1,10 @@
+google-cloud-storage==1.13.2
+jupyter
+pandas==0.23.4
+scikit-image==0.14.0
+scikit-learn==0.20.0
+seaborn==0.9.0
+torch==0.4.1
+torchvision==0.2.1
+tqdm==4.28.1
+setproctitle==1.1.10

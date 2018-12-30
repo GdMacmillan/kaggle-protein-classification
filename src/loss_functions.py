@@ -76,12 +76,15 @@ class IncrementalClassRectificationLoss(nn.Module):
         self.bce = nn.BCEWithLogitsLoss()
 
     def forward(self, input, target, X):
-        if self.sigmoid:
-            input = torch.sigmoid(input)
         idxs = get_minority_classes(target, batchSz=self.batchSz)
+        if self.sigmoid:
+            sigmoid_input = torch.sigmoid(input)
+            y_min = target[:, idxs]
+            preds_min = sigmoid_input[:, idxs]
+        else:
+            y_min = target[:, idxs]
+            preds_min = input[:, idxs]
 
-        y_min = target[:, idxs]
-        preds_min = input[:, idxs]
         y_mask = y_min == 1
         P = torch.nonzero(y_mask)
         N = torch.nonzero(~y_mask)
@@ -117,6 +120,9 @@ class IncrementalClassRectificationLoss(nn.Module):
         if self.class_level_hard_mining:
             idx_tensors = torch.cat(idx_tensors, 0)
             pred_tensors = torch.cat(pred_tensors, 0)
+        else:
+            # TODO: implement instance level hard mining
+
         crl = self.trip_loss(pred_tensors[:, 0], pred_tensors[:, 1], pred_tensors[:, 2])
         bce = self.bce(input, target)
 
