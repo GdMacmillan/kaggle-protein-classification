@@ -92,7 +92,7 @@ def main():
         net = net.cuda()
 
     if args.opt == 'sgd':
-        optimizer = torch.optim.SGD(net.parameters(), lr=1e-1, momentum=0.9, weight_decay=1e-4)
+        optimizer = torch.optim.SGD(net.parameters(), lr=0.002, momentum=0.9, weight_decay=1e-4)
     elif args.opt == 'adam':
         optimizer = torch.optim.Adam(net.parameters(), weight_decay=1e-4)
     elif args.opt == 'rmsprop':
@@ -214,9 +214,9 @@ def test(args, epoch, net, devLoader, criterion, optimizer, testF):
 
 def adjust_opt(optAlg, optimizer, epoch):
     if optAlg == 'sgd':
-        if epoch < 150: lr = 1e-1
-        elif epoch == 150: lr = 1e-2
-        elif epoch == 225: lr = 1e-3
+        if epoch < 150: lr = 0.002
+        elif epoch == 150: lr = 1e-3
+        elif epoch == 225: lr = 1e-4
         else: return
 
         for param_group in optimizer.param_groups:
