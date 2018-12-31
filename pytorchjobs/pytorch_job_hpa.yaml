@@ -6,7 +6,6 @@ spec:
   pytorchReplicaSpecs:
     Master:
       replicas: 1
-      restartPolicy: OnFailure
       template:
         spec:
           containers:
@@ -35,3 +34,33 @@ spec:
                 pdName: hpakf-data2
                 fsType: ext4
                 readOnly: true
+    # Worker:
+    #   replicas: 3
+    #   template:
+    #     spec:
+    #       containers:
+    #         - name: pytorch
+    #           image: gcr.io/optfit-kaggle/human-protein-atlas:latest
+    #           env:
+    #           - name: BRANCH
+    #             value: "master" # set to your branch
+    #           - name: CLOUD_STORAGE_BUCKET
+    #             value: "hpa-experiments" # where the test results will be uploaded
+    #           - name: GOOGLE_APPLICATION_CREDENTIALS_JSON_FILE
+    #             valueFrom:
+    #               secretKeyRef:
+    #                 name: gcs-service-account
+    #                 key: gcs-service-account.json
+    #           resources:
+    #             limits:
+    #               nvidia.com/gpu: 1
+    #           volumeMounts:
+    #             - mountPath: /hpakf-image-data
+    #               name: test-volume
+    #       volumes:
+    #         - name: test-volume
+    #           # This GCE PD must already exist.
+    #           gcePersistentDisk:
+    #             pdName: hpakf-data2
+    #             fsType: ext4
+    #             readOnly: true

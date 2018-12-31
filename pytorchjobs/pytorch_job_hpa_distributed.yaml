@@ -1,12 +1,11 @@
 apiVersion: "kubeflow.org/v1alpha2"
 kind: "PyTorchJob"
 metadata:
-  name: "pytorch-human-protein-atlas-distributed"
+  name: "pytorch-human-protein-atlas"
 spec:
   pytorchReplicaSpecs:
     Master:
       replicas: 1
-      restartPolicy: OnFailure
       template:
         spec:
           containers:
@@ -14,7 +13,7 @@ spec:
               image: gcr.io/optfit-kaggle/human-protein-atlas:latest
               env:
               - name: BRANCH
-                value: "gordon" # set to your branch
+                value: "master" # set to your branch
               - name: CLOUD_STORAGE_BUCKET
                 value: "hpa-experiments" # where the test results will be uploaded
               - name: GOOGLE_APPLICATION_CREDENTIALS_JSON_FILE
@@ -37,7 +36,6 @@ spec:
                 readOnly: true
     Worker:
       replicas: 3
-      restartPolicy: OnFailure
       template:
         spec:
           containers:
@@ -45,7 +43,7 @@ spec:
               image: gcr.io/optfit-kaggle/human-protein-atlas:latest
               env:
               - name: BRANCH
-                value: "gordon" # set to your branch
+                value: "master" # set to your branch
               - name: CLOUD_STORAGE_BUCKET
                 value: "hpa-experiments" # where the test results will be uploaded
               - name: GOOGLE_APPLICATION_CREDENTIALS_JSON_FILE

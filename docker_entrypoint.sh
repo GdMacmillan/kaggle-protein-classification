@@ -8,4 +8,4 @@ git remote set-url origin https://github.com/DMLSG/human-protein-atlas.git
 git pull
 git checkout $BRANCH
 
-./train_script_distributed.sh # or train_script.sh
+./train_script.sh # or train_script.sh
