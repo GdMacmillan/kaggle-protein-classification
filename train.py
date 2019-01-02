@@ -53,11 +53,9 @@ def main():
     else:
         nGPU = args.nGPU
 
-    main_proc = True
     if args.distributed:
         dist.init_process_group(backend='gloo')
         init_print(dist.get_rank(), dist.get_world_size())
-        main_proc = dist.get_rank() == 0
 
     print("using cuda ", args.cuda)
 
@@ -116,7 +114,8 @@ def main():
         unfreeze_weights(args.pretrained, net, epoch)
         train(args, epoch, net, trainLoader, criterion, optimizer, trainF)
         test(args, epoch, net, devLoader, criterion, optimizer, testF)
-        save_model(net, epoch, args.save, distributed=args.distributed, main_proc=main_proc)
+        torch.save(net, os.path.join(args.save, '%d.pth' % epoch))
+
     trainF.close()
     testF.close()
 
@@ -212,14 +211,6 @@ def test(args, epoch, net, devLoader, criterion, optimizer, testF):
             test_loss, acc, prec, rec))
         testF.write('{},{},{},{},{}\n'.format(epoch, test_loss, acc, prec, rec))
         testF.flush()
-
-def save_model(net, epoch, save_path, distributed=False, main_proc=False):
-    if args.distributed and main_proc:
-        torch.save(net.module, os.path.join(save_path, '%d.pth' % epoch))
-    if not args.distributed:
-        torch.save(net, os.path.join(save_path, '%d.pth' % epoch))
-    else:
-        pass
 
 def adjust_opt(optAlg, optimizer, epoch):
     if optAlg == 'sgd':
