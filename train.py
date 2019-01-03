@@ -53,7 +53,9 @@ def main():
     else:
         nGPU = args.nGPU
 
+    main_proc = True
     if args.distributed:
+        main_proc = dist.get_rank() == 0
         dist.init_process_group(backend='gloo')
         init_print(dist.get_rank(), dist.get_world_size())
 
@@ -114,7 +116,9 @@ def main():
         unfreeze_weights(args.pretrained, net, epoch)
         train(args, epoch, net, trainLoader, criterion, optimizer, trainF)
         test(args, epoch, net, devLoader, criterion, optimizer, testF)
-        torch.save(net, os.path.join(args.save, '%d.pth' % epoch))
+        if main_proc:
+            save_model(args, epoch, net)
+
 
     trainF.close()
     testF.close()
@@ -211,6 +215,11 @@ def test(args, epoch, net, devLoader, criterion, optimizer, testF):
             test_loss, acc, prec, rec))
         testF.write('{},{},{},{},{}\n'.format(epoch, test_loss, acc, prec, rec))
         testF.flush()
+
+def save_model(args, epoch, net):
+    save_path = os.path.join(args.save, '%d.pth' % epoch)
+    net = net.module if args.distributed else net
+    torch.save(net, save_path)
 
 def adjust_opt(optAlg, optimizer, epoch):
     if optAlg == 'sgd':
