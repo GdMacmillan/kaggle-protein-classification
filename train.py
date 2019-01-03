@@ -55,8 +55,8 @@ def main():
 
     main_proc = True
     if args.distributed:
-        main_proc = dist.get_rank() == 0
         dist.init_process_group(backend='gloo')
+        main_proc = dist.get_rank() == 0
         init_print(dist.get_rank(), dist.get_world_size())
 
     print("using cuda ", args.cuda)
