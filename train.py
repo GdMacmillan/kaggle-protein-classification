@@ -114,7 +114,7 @@ def main():
     for epoch in range(args.sEpoch, args.nEpochs + args.sEpoch):
         adjust_opt(args.opt, optimizer, epoch)
         unfreeze_weights(args.pretrained, net, epoch)
-        train(args, epoch, net, trainLoader, criterion, optimizer, trainF)
+        # train(args, epoch, net, trainLoader, criterion, optimizer, trainF)
         test(args, epoch, net, devLoader, criterion, optimizer, testF)
         if main_proc:
             save_model(args, epoch, net)
