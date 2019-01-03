@@ -118,7 +118,7 @@ def get_network(network_name, pretrained=False, lf='bce'):
 
     if network_name == 'vgg16':
         vgg16 = models.vgg16(pretrained)
-        print(vgg16.classifier[6].out_features) # 1000
+        # print(vgg16.classifier[6].out_features) # 1000
 
         # Freeze training for all layers
         # Newly created modules have require_grad=True by default
