@@ -9,4 +9,4 @@ git pull
 git checkout $BRANCH
 git pull
 
-# ./$TRAIN_SCRIPT
+./$TRAIN_SCRIPT
