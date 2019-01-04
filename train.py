@@ -106,11 +106,15 @@ def main():
         lf_args = None
     criterion = get_loss_function(args.crit, lf_args)
 
+    sched_args = [10, 1e-4, 1.1, .5, 0]
+    scheduler = CosineAnnealingRestartsLR(optimizer, *sched_args)
+
     trainF = open(os.path.join(args.save, 'train.csv'), 'a')
     testF = open(os.path.join(args.save, 'test.csv'), 'a')
 
     for epoch in range(args.sEpoch, args.nEpochs + args.sEpoch):
-        adjust_opt(args, epoch, optimizer)
+        # adjust_opt(args, epoch, optimizer)
+        scheduler.step()
         unfreeze_weights(args, epoch, net)
         train(args, epoch, net, trainLoader, criterion, optimizer, trainF)
         test(args, epoch, net, devLoader, criterion, optimizer, testF)
