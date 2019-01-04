@@ -69,8 +69,6 @@ def main():
     if args.cuda:
         torch.cuda.manual_seed(args.seed)
 
-    if os.path.exists(args.save):
-        shutil.rmtree(args.save)
     os.makedirs(args.save, exist_ok=True)
 
     kwargs = {'batch_size': args.batchSz}
@@ -217,7 +215,7 @@ def test(args, epoch, net, devLoader, criterion, optimizer, testF):
 
 def save_model(args, epoch, net):
     save_path = os.path.join(args.save, '%d.pth' % epoch)
-    net = net.module if args.distributed else net
+    net = net.module if args.distributed or args.parallel else net
     torch.save(net.state_dict(), save_path)
 
 def load_model(args, net):
