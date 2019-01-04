@@ -215,7 +215,7 @@ def test(args, epoch, net, devLoader, criterion, optimizer, testF):
 
 def save_model(args, epoch, net):
     save_path = os.path.join(args.save, '%d.pth' % epoch)
-    net = net.module if args.distributed or args.parallel else net
+    net = net.module if args.distributed or args.data_parallel else net
     torch.save(net.state_dict(), save_path)
 
 def load_model(args, net):
