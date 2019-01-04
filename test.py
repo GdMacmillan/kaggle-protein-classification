@@ -66,11 +66,6 @@ def main():
     now = datetime.datetime.now(tz=pytz.timezone("US/Mountain")).strftime("%Y-%m-%d___%H:%M:%S")
     predict_csv_path = os.path.join(args.save, '{}_{}_predict.csv'.format(BRANCH_NAME, now))
 
-    try:
-        os.remove(predict_csv_path) # remove if already created
-    except:
-        print("predict_csv_path does not exist")
-
     predF = open(predict_csv_path, 'a')
 
     predict(args, net, testLoader, predF)

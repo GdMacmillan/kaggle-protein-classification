@@ -120,6 +120,8 @@ def main():
     trainF.close()
     testF.close()
 
+    copy_files()
+
 def train(args, epoch, net, trainLoader, criterion, optimizer, trainF):
     net.train()
     nProcessed = 0
@@ -236,6 +238,9 @@ def unfreeze_weights(pretrained, model, epoch):
     if (pretrained) and epoch > (18):
         for param in model.features.parameters():
             param.require_grad = True
+
+def copy_files():
+    pass
 
 if __name__ == '__main__':
     main()

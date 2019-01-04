@@ -17,6 +17,6 @@ predict_csv_path does not exist
 
 1. make sure unfreeze weights works and I can unfreeze_weights in a dataparallel model
 
-2. test new save/load functionality
+2. move sigmoid layer back to last layer of net so outputs from net are probabilities. Change BCE with logits to just BCE
 
-3. move sigmoid layer back to last layer of net so outputs from net are probabilities. Change BCE with logits to just BCE
+3. Test thresholding in kaggle kernel

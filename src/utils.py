@@ -174,6 +174,7 @@ def predict(args, net, dataLoader, predF):
 
     with torch.no_grad():
         predF.write('Id,Predicted\n')
+        print('writing predictions...')
         for batch_idx, data in enumerate(dataLoader):
             inputs, image_ids = data['image'], data['image_id']
             if args.cuda:

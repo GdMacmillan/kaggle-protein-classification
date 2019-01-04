@@ -34,7 +34,7 @@ def get_minority_classes(y, batchSz):
     sorted_hjk = sorted_hjk[mask]
     # ix = ix[mask]
     # return ix[np.argsort(ix)][sorted_hjk[np.argsort(ix)] > 1]
-    sorted_, sorted_ix = ix = ix[mask].sort()
+    sorted_, sorted_ix = ix[mask].sort()
 
     return sorted_[sorted_hjk[sorted_ix] > 1]
 
