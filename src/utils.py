@@ -9,6 +9,7 @@ from .nets import Net
 from .loss_functions import f1_loss, TripletLoss, IncrementalClassRectificationLoss
 from .transforms import *
 from .datasets import TrainImageDataset, TestImageDataset
+from .ddp import partition_dataset
 
 
 def get_transforms(pretrained=False):
@@ -86,7 +87,7 @@ def get_testloader(args, **kwargs):
 
     return testloader
 
-def get_train_test_split(args, val_split=0.10, **kwargs):
+def get_train_test_split(args, val_split=0.10, distributed=False, **kwargs):
     n_subsample = args.nSubsample
 
     with open(args.train_csv_path, 'r') as f:
@@ -103,10 +104,13 @@ def get_train_test_split(args, val_split=0.10, **kwargs):
     trainset = get_dataset(args, idxs=train_idxs)
     devset = get_dataset(args, idxs=dev_idxs)
 
-    trainloader = DataLoader(trainset, shuffle=True, **kwargs)
-    devloader = DataLoader(devset, shuffle=False, **kwargs)
+    if distributed:
+        trainLoader, devLoader, args.batchSz = partition_dataset(trainset, devset, args.batchSz)
+    else:
+        trainLoader = DataLoader(trainset, shuffle=True, **kwargs)
+        devLoader = DataLoader(devset, shuffle=False, **kwargs)
 
-    return trainloader, devloader
+    return trainLoader, devLoader
 
 def get_network(network_name, pretrained=False, lf='bce'):
     if network_name not in ['vgg16']:
@@ -114,7 +118,7 @@ def get_network(network_name, pretrained=False, lf='bce'):
 
     if network_name == 'vgg16':
         vgg16 = models.vgg16(pretrained)
-        print(vgg16.classifier[6].out_features) # 1000
+        # print(vgg16.classifier[6].out_features) # 1000
 
         # Freeze training for all layers
         # Newly created modules have require_grad=True by default

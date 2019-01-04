@@ -34,6 +34,8 @@ def main():
     parser.add_argument('--seed', type=int, default=50)
     parser.add_argument('--opt', type=str, default='sgd', choices=('sgd', 'adam', 'rmsprop'))
     parser.add_argument('--crit', type=str, default='bce', choices=('bce', 'f1', 'crl'))
+    parser.add_argument('--distributed', type=bool, default=False,
+                    help='If True, use distributed data parallel training (default, False).')
     args = parser.parse_args()
 
     if args.use_cuda == 'yes' and not torch.cuda.is_available():
@@ -50,6 +52,12 @@ def main():
         nGPU = 1
     else:
         nGPU = args.nGPU
+
+    main_proc = True
+    if args.distributed:
+        dist.init_process_group(backend='gloo')
+        main_proc = dist.get_rank() == 0
+        init_print(dist.get_rank(), dist.get_world_size())
 
     print("using cuda ", args.cuda)
 
@@ -75,7 +83,9 @@ def main():
     else:
         net = get_network(args.network_name, args.pretrained)
 
-    if args.data_parallel:
+    if args.distributed:
+        net = DistributedDataParallel(net)
+    elif args.data_parallel:
         net = torch.nn.DataParallel(net)
 
     print('  + Number of params: {}'.format(sum([p.data.nelement() for p in net.parameters()])))
@@ -84,7 +94,7 @@ def main():
         net = net.cuda()
 
     if args.opt == 'sgd':
-        optimizer = torch.optim.SGD(net.parameters(), lr=1e-1, momentum=0.9, weight_decay=1e-4)
+        optimizer = torch.optim.SGD(net.parameters(), lr=1e-3, momentum=0.9, weight_decay=1e-4)
     elif args.opt == 'adam':
         optimizer = torch.optim.Adam(net.parameters(), weight_decay=1e-4)
     elif args.opt == 'rmsprop':
@@ -93,7 +103,7 @@ def main():
         raise ModuleNotFoundError('optimiser not found')
 
     if args.crit == 'crl':
-        lf_args = [0.5, 8.537058595265812e-06, args.batchSz, 3, True]
+        lf_args = [0.5, 8.537058595265812e-06, args.batchSz, 5, True, True]
     else:
         lf_args = None
     criterion = get_loss_function(args.crit, lf_args)
@@ -106,7 +116,9 @@ def main():
         unfreeze_weights(args.pretrained, net, epoch)
         train(args, epoch, net, trainLoader, criterion, optimizer, trainF)
         test(args, epoch, net, devLoader, criterion, optimizer, testF)
-        torch.save(net, os.path.join(args.save, '%d.pth' % epoch))
+        if main_proc:
+            save_model(args, epoch, net)
+
 
     trainF.close()
     testF.close()
@@ -135,6 +147,8 @@ def train(args, epoch, net, trainLoader, criterion, optimizer, trainF):
 
         loss = criterion(*loss_inputs)
         loss.backward()
+        if args.distributed:
+            average_gradients(net)
         optimizer.step()
         nProcessed += len(data)
         pred = outputs.data.gt(0.5)
@@ -172,7 +186,13 @@ def test(args, epoch, net, devLoader, criterion, optimizer, testF):
                 labels = labels.cuda()
 
             outputs = net(inputs)
-            test_loss += criterion(outputs, labels)
+
+            if args.crit == 'crl':
+                loss_inputs = (outputs, labels, inputs)
+            else:
+                loss_inputs = (outputs, labels)
+
+            test_loss += criterion(*loss_inputs)
             pred = outputs.data.gt(0.5)
             tp = (pred + labels.data.byte()).eq(2).sum().float()
             fp = (pred - labels.data.byte()).eq(1).sum().float()
@@ -196,18 +216,23 @@ def test(args, epoch, net, devLoader, criterion, optimizer, testF):
         testF.write('{},{},{},{},{}\n'.format(epoch, test_loss, acc, prec, rec))
         testF.flush()
 
+def save_model(args, epoch, net):
+    save_path = os.path.join(args.save, '%d.pth' % epoch)
+    net = net.module if args.distributed else net
+    torch.save(net, save_path)
+
 def adjust_opt(optAlg, optimizer, epoch):
     if optAlg == 'sgd':
-        if epoch < 150: lr = 1e-1
-        elif epoch == 150: lr = 1e-2
-        elif epoch == 225: lr = 1e-3
+        if epoch < 15: lr = 1e-3
+        elif epoch == 18: lr = 5e-4
+        elif epoch == 20: lr = 1e-4
         else: return
 
         for param_group in optimizer.param_groups:
             param_group['lr'] = lr
 
 def unfreeze_weights(pretrained, model, epoch):
-    if (pretrained) and epoch > (100):
+    if (pretrained) and epoch > (18):
         for param in model.features.parameters():
             param.require_grad = True
 
