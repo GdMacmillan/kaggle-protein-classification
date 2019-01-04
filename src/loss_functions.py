@@ -32,9 +32,11 @@ def get_minority_classes(y, batchSz):
     sorted_hjk, ix = y.sum(0).sort()
     mask = torch.cumsum(sorted_hjk, 0) <= .5 * batchSz
     sorted_hjk = sorted_hjk[mask]
-    ix = ix[mask]
-    return ix[np.argsort(ix)][sorted_hjk[np.argsort(ix)] > 1]
+    # ix = ix[mask]
+    # return ix[np.argsort(ix)][sorted_hjk[np.argsort(ix)] > 1]
+    sorted_, sorted_ix = ix = ix[mask].sort()
 
+    return sorted_[sorted_hjk[sorted_ix] > 1]
 
 class TripletLoss(nn.Module):
     """
