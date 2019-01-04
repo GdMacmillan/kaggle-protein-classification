@@ -4,7 +4,7 @@
 
 echo "*** running train script ***"
 
-python -u train.py -n "vgg16" -d "hpa" -p "True" --train-images-path="/hpakf-image-data/data/train_images" --nEpochs=25 --batchSz=32 --use-cuda=yes --crit="crl"
+python -u train.py -n "vgg16" -d "hpa" -p "True" --train-images-path="/hpakf-image-data/data/train_images" --nEpochs=2 --nSubsample=5000 --batchSz=32 --use-cuda=yes --crit="crl"
 
 echo "*** training complete. running test script ***"
 

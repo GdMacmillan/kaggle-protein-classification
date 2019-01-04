@@ -77,11 +77,10 @@ def main():
 
     trainLoader, devLoader = get_train_test_split(args, **kwargs)
 
+    net = get_network(args.network_name, args.pretrained)
     if args.load:
         print("Loading network: {}".format(args.load))
-        net = torch.load(args.load)
-    else:
-        net = get_network(args.network_name, args.pretrained)
+        load_model(args, net)
 
     if args.distributed:
         net = DistributedDataParallel(net)
@@ -219,7 +218,11 @@ def test(args, epoch, net, devLoader, criterion, optimizer, testF):
 def save_model(args, epoch, net):
     save_path = os.path.join(args.save, '%d.pth' % epoch)
     net = net.module if args.distributed else net
-    torch.save(net, save_path)
+    torch.save(net.state_dict(), save_path)
+
+def load_model(args, net):
+    load_path = args.load
+    net.load_state_dict(torch.load(load_path))
 
 def adjust_opt(optAlg, optimizer, epoch):
     if optAlg == 'sgd':
