@@ -106,7 +106,7 @@ def main():
         lf_args = None
     criterion = get_loss_function(args.crit, lf_args)
 
-    sched_args = [10, 1e-4, 1.1, .5, 0]
+    sched_args = [10, 1e-4, 1.1, .5, -1]
     scheduler = CosineAnnealingRestartsLR(optimizer, *sched_args)
 
     trainF = open(os.path.join(args.save, 'train.csv'), 'a')
