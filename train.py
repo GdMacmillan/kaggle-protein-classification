@@ -94,7 +94,7 @@ def main():
         net = net.cuda()
 
     if args.opt == 'sgd':
-        optimizer = torch.optim.SGD(net.parameters(), lr=0.002, momentum=0.9, weight_decay=1e-4)
+        optimizer = torch.optim.SGD(net.parameters(), lr=1e-3, momentum=0.9, weight_decay=1e-4)
     elif args.opt == 'adam':
         optimizer = torch.optim.Adam(net.parameters(), weight_decay=1e-4)
     elif args.opt == 'rmsprop':
@@ -223,16 +223,16 @@ def save_model(args, epoch, net):
 
 def adjust_opt(optAlg, optimizer, epoch):
     if optAlg == 'sgd':
-        if epoch < 150: lr = 0.002
-        elif epoch == 150: lr = 1e-3
-        elif epoch == 225: lr = 1e-4
+        if epoch < 15: lr = 1e-3
+        elif epoch == 18: lr = 5e-4
+        elif epoch == 20: lr = 1e-4
         else: return
 
         for param_group in optimizer.param_groups:
             param_group['lr'] = lr
 
 def unfreeze_weights(pretrained, model, epoch):
-    if (pretrained) and epoch > (100):
+    if (pretrained) and epoch > (18):
         for param in model.features.parameters():
             param.require_grad = True
 
