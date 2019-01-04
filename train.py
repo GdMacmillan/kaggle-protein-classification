@@ -23,7 +23,8 @@ def main():
     parser.add_argument('-dp', '--data-parallel', type=bool, default=True)
     parser.add_argument('--train-images-path', type=str, default=default_train_images)
     parser.add_argument('--train-csv-path', type=str, default=default_csv)
-    parser.add_argument('-l', '--load')
+    parser.add_argument('-l', '--load',
+                    help='if using load, must be path to .pth file containing serialized model state dict, ')
     parser.add_argument('--batchSz', type=int, default=32) # 64
     parser.add_argument('--nEpochs', type=int, default=1) # 300
     parser.add_argument('--sEpoch', type=int, default=1)
@@ -109,8 +110,8 @@ def main():
     testF = open(os.path.join(args.save, 'test.csv'), 'a')
 
     for epoch in range(args.sEpoch, args.nEpochs + args.sEpoch):
-        adjust_opt(args.opt, optimizer, epoch)
-        unfreeze_weights(args.pretrained, net, epoch)
+        adjust_opt(args, epoch, optimizer)
+        unfreeze_weights(args, epoch, net)
         train(args, epoch, net, trainLoader, criterion, optimizer, trainF)
         test(args, epoch, net, devLoader, criterion, optimizer, testF)
         if main_proc:
@@ -224,8 +225,8 @@ def load_model(args, net):
     load_path = args.load
     net.load_state_dict(torch.load(load_path))
 
-def adjust_opt(optAlg, optimizer, epoch):
-    if optAlg == 'sgd':
+def adjust_opt(args, epoch, optimizer):
+    if args.opt == 'sgd':
         if epoch < 15: lr = 1e-3
         elif epoch == 18: lr = 5e-4
         elif epoch == 20: lr = 1e-4
@@ -234,9 +235,10 @@ def adjust_opt(optAlg, optimizer, epoch):
         for param_group in optimizer.param_groups:
             param_group['lr'] = lr
 
-def unfreeze_weights(pretrained, model, epoch):
-    if (pretrained) and epoch > (18):
-        for param in model.features.parameters():
+def unfreeze_weights(args, epoch, net):
+    net = net.module if args.distributed or args.data_parallel else net
+    if args.pretrained and epoch > 1:
+        for param in net.features.parameters():
             param.require_grad = True
 
 def copy_files():
