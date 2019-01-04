@@ -47,17 +47,18 @@ def main():
 
     testLoader = get_testloader(args, **kwargs)
 
+    net = get_network(args.network_name, args.pretrained)
     if args.load:
         print("Loading network: {}".format(args.load))
-        net = torch.load(args.load)
+        load_model(args, net)
     else:
         load_path = 'work/%s/%s' % (args.network_name, args.dataset_name)
         files = [f for f in os.listdir(load_path) if \
                             os.path.isfile(os.path.join(load_path, f)) \
                             and '.pth' in f]
         current = max([int(i.replace('.pth', '')) for i in files])
-        model_path = os.path.join(load_path, str(current) + '.pth')
-        net = torch.load(model_path)
+        args.load = os.path.join(load_path, str(current) + '.pth')
+        load_model(args, net)
 
     if args.cuda:
         net = net.cuda()
@@ -82,6 +83,10 @@ def main():
         blob = bucket.blob(predict_csv_path)
 
         blob.upload_from_filename(predict_csv_path)
+
+def load_model(args, net):
+    load_path = args.load
+    net.load_state_dict(torch.load(load_path))
 
 if __name__ == '__main__':
     main()
