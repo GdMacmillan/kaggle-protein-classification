@@ -11,6 +11,7 @@ import csv
 from src import *
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+CLOUD_STORAGE_BUCKET = os.environ['CLOUD_STORAGE_BUCKET'] if('CLOUD_STORAGE_BUCKET' in os.environ) else ""
 
 default_train_images = os.path.join(BASE_DIR, 'data/train_images')
 default_csv = os.path.join(BASE_DIR, 'data/train.csv')
@@ -62,7 +63,7 @@ def main():
 
     print("using cuda ", args.cuda)
 
-    args.save = args.save or 'work/%s/%s' % \
+    args.save = args.save or 'work/%s/%s/%s' % \
                                 (args.network_name, args.dataset_name)
     setproctitle.setproctitle(args.save)
 
@@ -121,11 +122,19 @@ def main():
         if main_proc:
             save_model(args, epoch, net)
 
-
     trainF.close()
     testF.close()
 
-    copy_files()
+    if len(CLOUD_STORAGE_BUCKET) != 0:
+        storage_client = storage.Client()
+        bucket = storage_client.get_bucket(CLOUD_STORAGE_BUCKET)
+        all_files = [name for name in os.listdir(args.save) \
+                            if os.path.isfile(os.path.join(args.save, name))]
+        if len(all_files) > 0:
+            print("uploading weights...")
+            for file in all_files:
+                blob = bucket.blob(os.path.join(args.save, file))
+                blob.upload_from_filename(os.path.join(args.save, file))
 
 def train(args, epoch, net, trainLoader, criterion, optimizer, trainF):
     net.train()
@@ -244,9 +253,6 @@ def unfreeze_weights(args, epoch, net):
     if args.pretrained and epoch > 1:
         for param in net.features.parameters():
             param.require_grad = True
-
-def copy_files():
-    pass
 
 if __name__ == '__main__':
     main()
