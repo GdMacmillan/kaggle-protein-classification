@@ -63,7 +63,7 @@ def main():
 
     print("using cuda ", args.cuda)
 
-    args.save = args.save or 'work/%s/%s/%s' % \
+    args.save = args.save or 'work/%s/%s' % \
                                 (args.network_name, args.dataset_name)
     setproctitle.setproctitle(args.save)
 
