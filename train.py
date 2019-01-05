@@ -6,6 +6,7 @@ import os
 import setproctitle
 import shutil
 import csv
+from google.cloud import storage
 
 # internals
 from src import *
