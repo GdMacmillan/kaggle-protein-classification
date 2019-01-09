@@ -29,6 +29,7 @@ def main():
     parser.add_argument('-l', '--load')
     parser.add_argument('--batchSz', type=int, default=32)
     parser.add_argument('--save')
+    parser.add_argument('--thresholds', type=str, default=None)
     args = parser.parse_args()
 
     args.cuda = torch.cuda.is_available()

@@ -1,22 +1,4 @@
-Traceback (most recent call last):
-  File "train.py", line 240, in <module>
-    main()
-  File "train.py", line 116, in main
-    unfreeze_weights(args.pretrained, net, epoch)
-  File "train.py", line 236, in unfreeze_weights
-    for param in model.features.parameters():
-  File "/opt/conda/lib/python3.6/site-packages/torch/nn/modules/module.py", line 518, in __getattr__
-    type(self).__name__, name))
-AttributeError: 'DataParallel' object has no attribute 'features'
-*** training complete. running test script ***
-/opt/conda/lib/python3.6/importlib/_bootstrap.py:219: RuntimeWarning: numpy.dtype size changed, may indicate binary incompatibility. Expected 96, got 88
-  return f(*args, **kwds)
-using cuda:  True
-predict_csv_path does not exist
-*** testing complete. pod will stop in 10 minutes ***
 
-1. make sure unfreeze weights works and I can unfreeze_weights in a dataparallel model
+1. Test thresholding in kaggle kernel
 
-2. Test thresholding in kaggle kernel
-
-3. Try ADAM optimizer
+2. Try ADAM optimizer

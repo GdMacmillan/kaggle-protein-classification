@@ -112,34 +112,53 @@ def get_train_test_split(args, val_split=0.10, distributed=False, **kwargs):
 
     return trainLoader, devLoader
 
-def get_network(network_name, pretrained=False, lf='bce'):
-    if network_name not in ['vgg16']:
-        pretrained = False # no pretrained weights for non torchvision models
+def freeze_pretrained_model_weights(net):
+    for param in net.features.parameters():
+        param.require_grad = False
 
-    if network_name == 'vgg16':
-        vgg16 = models.vgg16(pretrained)
-        # print(vgg16.classifier[6].out_features) # 1000
+    return net
 
+def freeze_pretrained_model_weights_renet(net):
+    for param in net.parameters():
+        param.requires_grad = False
+
+def swap_last_layer(net):
+    num_features = net.classifier[-1].in_features
+    features = list(net.classifier.children())[:-1] # Remove last layer
+    features.extend([Linear(num_features, 28)]) # Add our layer with 28 outputs. activation in loss function
+    net.classifier = Sequential(*features) # Replace the model classifier
+
+    return net
+
+def swap_last_layer_resnet(net):
+    num_features = net.fc.in_features
+    net.fc = nn.Linear(num_features, 28)
+
+    return net
+
+def get_network(args):
+    name = args.network_name
+    pretrained = args.pretrained
+    if hasattr(models, name):
+        torchvision_model = getattr(models, name)
+        net = torchvision_model()
+        if pretrained:
         # Freeze training for all layers
         # Newly created modules have require_grad=True by default
-        if pretrained:
-            for param in vgg16.features.parameters():
-                param.require_grad = False
+            if 'resnet' in name:
+                freeze_pretrained_model_weights_renet(net)
+            else:
+                freeze_pretrained_model_weights(net)
 
-        num_features = vgg16.classifier[6].in_features
-        features = list(vgg16.classifier.children())[:-1] # Remove last layer
-        if lf == 'bce':
-            features.extend([Linear(num_features, 28)]) # Add our layer with 28 outputs. activation in loss function
+        if 'resnet' in name:
+            net = swap_last_layer_resnet(net)
         else:
-            features.extend([Linear(num_features, 28), Sigmoid()])
-        vgg16.classifier = Sequential(*features) # Replace the model classifier
-
-        return vgg16
+            net = swap_last_layer(net)
 
     else:
         net = Net()
 
-        return net
+    return net
 
 def get_loss_function(lf='bce', args=None):
     if lf == 'bce':
@@ -181,7 +200,13 @@ def predict(args, net, dataLoader, predF):
                 inputs = inputs.cuda()
 
             outputs = net(inputs)
-            pred = outputs.data.gt(0.5)
+            if args.thresholds is not None:
+                thresholds = np.array([float(val) for val in
+                                            args.thresholds.split(",")])
+                thresholds = torch.tensor(args.thresholds)
+                pred = outputs.data.gt(thresholds)
+            else:
+                pred = outputs.data.gt(0.5)
             preds = positive_predictions(pred)
             for _ in zip(image_ids, preds):
                 predF.write(",".join(_) + '\n')

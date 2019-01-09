@@ -78,7 +78,7 @@ def main():
 
     trainLoader, devLoader = get_train_test_split(args, **kwargs)
 
-    net = get_network(args.network_name, args.pretrained)
+    net = get_network(args)
     if args.load:
         print("Loading network: {}".format(args.load))
         load_model(args, net)
@@ -106,6 +106,7 @@ def main():
         lf_args = [0.5, 8.537058595265812e-06, args.batchSz, 5, True, True]
     else:
         lf_args = None
+
     criterion = get_loss_function(args.crit, lf_args)
 
     sched_args = [10, 1e-4, 1.1, .5, -1]
