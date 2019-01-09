@@ -48,7 +48,7 @@ def main():
 
     testLoader = get_testloader(args, **kwargs)
 
-    net = get_network(args.network_name, args.pretrained)
+    net = get_network(args)
     if args.load:
         print("Loading network: {}".format(args.load))
         load_model(args, net)
