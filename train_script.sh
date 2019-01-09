@@ -12,4 +12,4 @@ GOOGLE_APPLICATION_CREDENTIALS=/workspace/gcs_credentials.json python -u test.py
 
 echo "*** testing complete. pod will stop in 10 minutes ***"
 
-sleep 600
+sleep 6000
