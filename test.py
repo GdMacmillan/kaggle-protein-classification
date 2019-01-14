@@ -30,6 +30,7 @@ def main():
     parser.add_argument('--batchSz', type=int, default=32)
     parser.add_argument('--save')
     parser.add_argument('--thresholds', type=str, default=None)
+    parser.add_argument('--sigmoid', type=bool, default=True)
     args = parser.parse_args()
 
     args.cuda = torch.cuda.is_available()
@@ -51,7 +52,6 @@ def main():
     net = get_network(args)
     if args.load:
         print("Loading network: {}".format(args.load))
-        load_model(args, net)
     else:
         load_path = 'work/%s/%s' % (args.network_name, args.dataset_name)
         files = [f for f in os.listdir(load_path) if \
@@ -59,7 +59,8 @@ def main():
                             and '.pth' in f]
         current = max([int(i.replace('.pth', '')) for i in files])
         args.load = os.path.join(load_path, str(current) + '.pth')
-        load_model(args, net)
+        print(args.load)
+    load_model(args, net)
 
     if args.cuda:
         net = net.cuda()
@@ -82,7 +83,10 @@ def main():
 
 def load_model(args, net):
     load_path = args.load
-    net.load_state_dict(torch.load(load_path))
+    if args.cuda:
+        net.load_state_dict(torch.load(load_path))
+    else:
+        net.load_state_dict(torch.load(load_path, map_location='cpu'))
 
 if __name__ == '__main__':
     main()

@@ -238,7 +238,10 @@ def save_model(args, epoch, net):
 
 def load_model(args, net):
     load_path = args.load
-    net.load_state_dict(torch.load(load_path))
+    if args.cuda:
+        net.load_state_dict(torch.load(load_path))
+    else:
+        net.load_state_dict(torch.load(load_path, map_location='cpu'))
 
 def adjust_opt(args, epoch, optimizer):
     if args.opt == 'sgd':

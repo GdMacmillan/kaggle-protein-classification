@@ -200,10 +200,15 @@ def predict(args, net, dataLoader, predF):
                 inputs = inputs.cuda()
 
             outputs = net(inputs)
+            if args.sigmoid:
+                outputs = torch.sigmoid(outputs)
             if args.thresholds is not None:
-                thresholds = np.array([float(val) for val in
-                                            args.thresholds.split(",")])
-                thresholds = torch.tensor(args.thresholds)
+                thresholds = [float(val) for val in
+                                            args.thresholds.split(",")]
+
+                thresholds = torch.tensor(thresholds)
+                if args.cuda:
+                    thresholds = thresholds.cuda()
                 pred = outputs.data.gt(thresholds)
             else:
                 pred = outputs.data.gt(0.5)
