@@ -21,8 +21,8 @@ spec:
               - name: GOOGLE_APPLICATION_CREDENTIALS_JSON_FILE
                 valueFrom:
                   secretKeyRef:
-                    name: gcs-service-account
-                    key: gcs-service-account.json
+                    name: optfit-kaggle-cloud-storage
+                    key: optfit-kaggle-cloud-storage.json
               resources:
                 limits:
                   nvidia.com/gpu: 1
