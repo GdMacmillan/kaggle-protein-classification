@@ -132,7 +132,7 @@ def swap_last_layer(net):
 
 def swap_last_layer_resnet(net):
     num_features = net.fc.in_features
-    net.fc = nn.Linear(num_features, 28)
+    net.fc = Linear(num_features, 28)
 
     return net
 
