@@ -19,16 +19,15 @@ spec:
               - name: TRAIN_SCRIPT
                 value: "train_script.sh" # which train script to use
               - name: GOOGLE_APPLICATION_CREDENTIALS_JSON_FILE
-                valueFrom:
-                  secretKeyRef:
-                    name: optfit-kaggle-cloud-storage
-                    key: optfit-kaggle-cloud-storage.json
+                value: /var/secrets/google/gcs-service-account.json
               resources:
                 limits:
                   nvidia.com/gpu: 1
               volumeMounts:
-                - mountPath: /hpakf-image-data
-                  name: test-volume
+                - name: test-volume
+                  mountPath: /hpakf-image-data
+                - name: google-cloud-key
+                  mountPath: /var/secrets/google
           volumes:
             - name: test-volume
               # This GCE PD must already exist.
@@ -36,3 +35,6 @@ spec:
                 pdName: hpakf-data2
                 fsType: ext4
                 readOnly: true
+            - name: google-cloud-key
+              secret:
+                secretName: gcs-service-account
