@@ -19,7 +19,7 @@ spec:
               - name: TRAIN_SCRIPT
                 value: "train_script.sh" # which train script to use
               - name: GOOGLE_APPLICATION_CREDENTIALS_JSON_FILE
-                value: /var/secrets/google/gcs-service-account.json
+                value: /var/secrets/google/key.json
               resources:
                 limits:
                   nvidia.com/gpu: 1
