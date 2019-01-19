@@ -122,6 +122,8 @@ def freeze_pretrained_model_weights_renet(net):
     for param in net.parameters():
         param.requires_grad = False
 
+    return net
+
 def swap_last_layer(net):
     num_features = net.classifier[-1].in_features
     features = list(net.classifier.children())[:-1] # Remove last layer

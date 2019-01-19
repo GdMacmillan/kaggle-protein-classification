@@ -30,6 +30,7 @@ def main():
     parser.add_argument('--batchSz', type=int, default=32) # 64
     parser.add_argument('--nEpochs', type=int, default=1) # 300
     parser.add_argument('--sEpoch', type=int, default=1)
+    parser.add_argument('--unfreeze-Epoch', type=int, default=-1)
     parser.add_argument('--nSubsample', type=int, default=0)
     parser.add_argument('--use-cuda', type=str, default='no')
     parser.add_argument('--nGPU', type=int, default=0)
@@ -254,10 +255,16 @@ def adjust_opt(args, epoch, optimizer):
             param_group['lr'] = lr
 
 def unfreeze_weights(args, epoch, net):
-    net = net.module if args.distributed or args.data_parallel else net
-    if args.pretrained and epoch > 1:
-        for param in net.features.parameters():
-            param.require_grad = True
+    if args.unfreeze_epoch == -1 or epoch < args.unfreeze_epoch:
+        pass
+    else:
+        net = net.module if args.distributed or args.data_parallel else net
+        if 'resnet' in name::
+            for param in net.parameters():
+                param.require_grad = True
+        else:
+            for param in net.features.parameters():
+                param.require_grad = True
 
 if __name__ == '__main__':
     main()
