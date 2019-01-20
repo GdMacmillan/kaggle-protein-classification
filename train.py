@@ -262,6 +262,7 @@ def unfreeze_weights(args, epoch, net):
         if 'resnet' in name:
             for param in net.parameters():
                 param.require_grad = True
+            print('params unfrozen')
         else:
             for param in net.features.parameters():
                 param.require_grad = True
