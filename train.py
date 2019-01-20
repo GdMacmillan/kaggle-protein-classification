@@ -30,7 +30,7 @@ def main():
     parser.add_argument('--batchSz', type=int, default=32) # 64
     parser.add_argument('--nEpochs', type=int, default=1) # 300
     parser.add_argument('--sEpoch', type=int, default=1)
-    parser.add_argument('--unfreeze-Epoch', type=int, default=-1)
+    parser.add_argument('--unfreeze-epoch', type=int, default=-1)
     parser.add_argument('--nSubsample', type=int, default=0)
     parser.add_argument('--use-cuda', type=str, default='no')
     parser.add_argument('--nGPU', type=int, default=0)

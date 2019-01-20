@@ -4,7 +4,7 @@
 
 echo "*** running train script ***"
 
-GOOGLE_APPLICATION_CREDENTIALS=/workspace/gcs_credentials.json python -u train.py -n "resnet34" -d "hpa" -p "True" --train-images-path="/hpakf-image-data/data/train_images" --nEpochs=25 --batchSz=32 --use-cuda=yes --crit="crl"
+GOOGLE_APPLICATION_CREDENTIALS=/workspace/gcs_credentials.json python -u train.py -n "resnet34" -d "hpa" -p "True" --train-images-path="/hpakf-image-data/data/train_images" --nEpochs=25 --batchSz=32 --unfreeze-epoch=23 --use-cuda=yes --crit="crl"
 
 echo "*** training complete. running test script ***"
 
