@@ -259,7 +259,7 @@ def unfreeze_weights(args, epoch, net):
         pass
     else:
         net = net.module if args.distributed or args.data_parallel else net
-        if 'resnet' in name:
+        if 'resnet' in args.network_name:
             for param in net.parameters():
                 param.require_grad = True
             print('params unfrozen')
