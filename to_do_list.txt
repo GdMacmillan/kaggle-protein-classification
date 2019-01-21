@@ -1,0 +1,4 @@
+
+1. Test thresholding in kaggle kernel
+
+2. Try ADAM optimizer

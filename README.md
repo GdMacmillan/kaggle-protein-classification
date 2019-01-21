@@ -58,13 +58,19 @@ Anyone with privs on the cluster can run. Do `git pull` latest code then run:
 
 `docker push gcr.io/optfit-kaggle/human-protein-atlas:latest`
 
-`kubectl -n kubeflow create -f pytorch_job_hpa.yaml``
-**If you receive a job already exists error trying to run a new pytorch job and no one else is trying to run the job in the same namespace, you must delete it from the pytorch jobs inventory on kubernetes in the namespace in which you are trying to run the job as there is no way to "rerun" a job.
- ex. `kubectl --namespace=kubeflow delete pytorchjob pytorch-human-protein-atlas`
+`kubectl -n kubeflow create -f pytorchjobs/pytorch_job_hpa.yaml`
 
-to ssh to pod it’s training run:
+If you receive a job already exists error trying to run a new pytorch job and no one else is trying to run the job in the same namespace, you must delete it from the pytorch jobs inventory on kubernetes in the namespace in which you are trying to run the job as there is no way to "rerun" a job.
 
-`kubectl exec -it pytorch-human-protein-atlas-master-0 -- /bin/bash`
+`kubectl -n kubeflow delete -f pytorchjobs/pytorch_job_hpa.yaml`
+
+for distributed:
+
+`kubectl -n kubeflow delete -f pytorchjobs/pytorch_job_hpa_distributed.yaml`
+
+to ssh to pod during training run:
+
+`kubectl -n kubeflow exec -it pytorch-human-protein-atlas-master-0 -- /bin/bash`
 
 to see logs:
 

@@ -6,11 +6,13 @@ import os
 import setproctitle
 import shutil
 import csv
+from google.cloud import storage
 
 # internals
 from src import *
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+CLOUD_STORAGE_BUCKET = os.environ['CLOUD_STORAGE_BUCKET'] if('CLOUD_STORAGE_BUCKET' in os.environ) else ""
 
 default_train_images = os.path.join(BASE_DIR, 'data/train_images')
 default_csv = os.path.join(BASE_DIR, 'data/train.csv')
@@ -23,10 +25,12 @@ def main():
     parser.add_argument('-dp', '--data-parallel', type=bool, default=True)
     parser.add_argument('--train-images-path', type=str, default=default_train_images)
     parser.add_argument('--train-csv-path', type=str, default=default_csv)
-    parser.add_argument('-l', '--load')
+    parser.add_argument('-l', '--load',
+                    help='if using load, must be path to .pth file containing serialized model state dict, ')
     parser.add_argument('--batchSz', type=int, default=32) # 64
     parser.add_argument('--nEpochs', type=int, default=1) # 300
     parser.add_argument('--sEpoch', type=int, default=1)
+    parser.add_argument('--unfreeze-epoch', type=int, default=-1)
     parser.add_argument('--nSubsample', type=int, default=0)
     parser.add_argument('--use-cuda', type=str, default='no')
     parser.add_argument('--nGPU', type=int, default=0)
@@ -69,19 +73,16 @@ def main():
     if args.cuda:
         torch.cuda.manual_seed(args.seed)
 
-    if os.path.exists(args.save):
-        shutil.rmtree(args.save)
     os.makedirs(args.save, exist_ok=True)
 
     kwargs = {'batch_size': args.batchSz}
 
     trainLoader, devLoader = get_train_test_split(args, **kwargs)
 
+    net = get_network(args)
     if args.load:
         print("Loading network: {}".format(args.load))
-        net = torch.load(args.load)
-    else:
-        net = get_network(args.network_name, args.pretrained)
+        load_model(args, net)
 
     if args.distributed:
         net = DistributedDataParallel(net)
@@ -106,22 +107,37 @@ def main():
         lf_args = [0.5, 8.537058595265812e-06, args.batchSz, 5, True, True]
     else:
         lf_args = None
+
     criterion = get_loss_function(args.crit, lf_args)
+
+    sched_args = [10, 1e-4, 1.1, .5, -1]
+    scheduler = CosineAnnealingRestartsLR(optimizer, *sched_args)
 
     trainF = open(os.path.join(args.save, 'train.csv'), 'a')
     testF = open(os.path.join(args.save, 'test.csv'), 'a')
 
     for epoch in range(args.sEpoch, args.nEpochs + args.sEpoch):
-        adjust_opt(args.opt, optimizer, epoch)
-        unfreeze_weights(args.pretrained, net, epoch)
+        # adjust_opt(args, epoch, optimizer)
+        scheduler.step()
+        unfreeze_weights(args, epoch, net)
         train(args, epoch, net, trainLoader, criterion, optimizer, trainF)
         test(args, epoch, net, devLoader, criterion, optimizer, testF)
         if main_proc:
             save_model(args, epoch, net)
 
-
     trainF.close()
     testF.close()
+
+    if len(CLOUD_STORAGE_BUCKET) != 0:
+        storage_client = storage.Client()
+        bucket = storage_client.get_bucket(CLOUD_STORAGE_BUCKET)
+        all_files = [name for name in os.listdir(args.save) \
+                            if os.path.isfile(os.path.join(args.save, name))]
+        if len(all_files) > 0:
+            print("uploading weights...")
+            for file in all_files:
+                blob = bucket.blob(os.path.join(args.save, file))
+                blob.upload_from_filename(os.path.join(args.save, file))
 
 def train(args, epoch, net, trainLoader, criterion, optimizer, trainF):
     net.train()
@@ -218,11 +234,18 @@ def test(args, epoch, net, devLoader, criterion, optimizer, testF):
 
 def save_model(args, epoch, net):
     save_path = os.path.join(args.save, '%d.pth' % epoch)
-    net = net.module if args.distributed else net
-    torch.save(net, save_path)
+    net = net.module if args.distributed or args.data_parallel else net
+    torch.save(net.state_dict(), save_path)
 
-def adjust_opt(optAlg, optimizer, epoch):
-    if optAlg == 'sgd':
+def load_model(args, net):
+    load_path = args.load
+    if args.cuda:
+        net.load_state_dict(torch.load(load_path))
+    else:
+        net.load_state_dict(torch.load(load_path, map_location='cpu'))
+
+def adjust_opt(args, epoch, optimizer):
+    if args.opt == 'sgd':
         if epoch < 15: lr = 1e-3
         elif epoch == 18: lr = 5e-4
         elif epoch == 20: lr = 1e-4
@@ -231,10 +254,18 @@ def adjust_opt(optAlg, optimizer, epoch):
         for param_group in optimizer.param_groups:
             param_group['lr'] = lr
 
-def unfreeze_weights(pretrained, model, epoch):
-    if (pretrained) and epoch > (18):
-        for param in model.features.parameters():
-            param.require_grad = True
+def unfreeze_weights(args, epoch, net):
+    if args.unfreeze_epoch == -1 or epoch < args.unfreeze_epoch:
+        pass
+    else:
+        net = net.module if args.distributed or args.data_parallel else net
+        if 'resnet' in args.network_name:
+            for param in net.parameters():
+                param.require_grad = True
+            print('params unfrozen')
+        else:
+            for param in net.features.parameters():
+                param.require_grad = True
 
 if __name__ == '__main__':
     main()

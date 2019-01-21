@@ -20,5 +20,5 @@ class Net(torch.nn.Module):
         x = x.view(-1, 16 * 125 * 125)
         x = torch.relu(self.fc1(x))
         x = torch.relu(self.fc2(x))
-        x = torch.sigmoid(self.fc3(x))
+
         return x

@@ -29,6 +29,8 @@ def main():
     parser.add_argument('-l', '--load')
     parser.add_argument('--batchSz', type=int, default=32)
     parser.add_argument('--save')
+    parser.add_argument('--thresholds', type=str, default=None)
+    parser.add_argument('--sigmoid', type=bool, default=True)
     args = parser.parse_args()
 
     args.cuda = torch.cuda.is_available()
@@ -47,28 +49,24 @@ def main():
 
     testLoader = get_testloader(args, **kwargs)
 
+    net = get_network(args)
     if args.load:
         print("Loading network: {}".format(args.load))
-        net = torch.load(args.load)
     else:
         load_path = 'work/%s/%s' % (args.network_name, args.dataset_name)
         files = [f for f in os.listdir(load_path) if \
                             os.path.isfile(os.path.join(load_path, f)) \
                             and '.pth' in f]
         current = max([int(i.replace('.pth', '')) for i in files])
-        model_path = os.path.join(load_path, str(current) + '.pth')
-        net = torch.load(model_path)
+        args.load = os.path.join(load_path, str(current) + '.pth')
+        print(args.load)
+    load_model(args, net)
 
     if args.cuda:
         net = net.cuda()
 
     now = datetime.datetime.now(tz=pytz.timezone("US/Mountain")).strftime("%Y-%m-%d___%H:%M:%S")
     predict_csv_path = os.path.join(args.save, '{}_{}_predict.csv'.format(BRANCH_NAME, now))
-
-    try:
-        os.remove(predict_csv_path) # remove if already created
-    except:
-        print("predict_csv_path does not exist")
 
     predF = open(predict_csv_path, 'a')
 
@@ -82,6 +80,13 @@ def main():
         blob = bucket.blob(predict_csv_path)
 
         blob.upload_from_filename(predict_csv_path)
+
+def load_model(args, net):
+    load_path = args.load
+    if args.cuda:
+        net.load_state_dict(torch.load(load_path))
+    else:
+        net.load_state_dict(torch.load(load_path, map_location='cpu'))
 
 if __name__ == '__main__':
     main()
