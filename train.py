@@ -79,7 +79,9 @@ def main():
 
     trainLoader, devLoader = get_train_test_split(args, **kwargs)
 
-    net = get_network(args)
+    # net = get_network(args)
+    net = NETWORKS_DICT[args.network_name](args.pretrained)
+
     if args.load:
         print("Loading network: {}".format(args.load))
         load_model(args, net)
