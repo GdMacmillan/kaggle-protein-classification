@@ -1,51 +1,29 @@
-import torch
-import torchvision
+import torchvision.models as models
+import torch.nn as nn
 
-from torch import nn
+from torch import cat
 
 
 RESNET_ENCODERS = {
-    34: torchvision.models.resnet34,
-    50: torchvision.models.resnet50,
-    101: torchvision.models.resnet101,
-    152: torchvision.models.resnet152,
+    34: models.resnet34,
+    50: models.resnet50,
+    101: models.resnet101,
+    152: models.resnet152,
 }
 
 VGG_CLASSIFIERS = {
-    11: torchvision.models.vgg11,
-    13: torchvision.models.vgg13,
-    16: torchvision.models.vgg16,
-    19: torchvision.models.vgg19,
+    11: models.vgg11,
+    13: models.vgg13,
+    16: models.vgg16,
+    19: models.vgg19,
 }
 
 VGG_BN_CLASSIFIERS = {
-    11: torchvision.models.vgg11_bn,
-    13: torchvision.models.vgg13_bn,
-    16: torchvision.models.vgg16_bn,
-    19: torchvision.models.vgg19_bn,
+    11: models.vgg11_bn,
+    13: models.vgg13_bn,
+    16: models.vgg16_bn,
+    19: models.vgg19_bn,
 }
-
-def freeze_pretrained_model_weights(net, type='vgg'):
-    if type='vgg'
-        for param in net.features.parameters()[1:-1]:
-            param.require_grad = False
-    else:
-        for param in net.parameters()[1:-1]:
-            param.requires_grad = False
-
-def swap_last_layer(net, type='vgg'):
-    num_features = net.classifier[-1].in_features
-    features = list(net.classifier.children())[:-1] # Remove last layer
-    features.extend([Linear(num_features, 28)]) # Add our layer with 28 outputs. activation in loss function
-    net.classifier = Sequential(*features) # Replace the model classifier
-
-    return net
-
-def swap_last_layer_resnet(net):
-    num_features = net.fc.in_features
-    net.fc = Linear(num_features, 28)
-
-    return net
 
 
 class Net(torch.nn.Module):
@@ -76,15 +54,17 @@ class Resnet4Channel(nn.Module):
 
         encoder = RESNET_ENCODERS[encoder_depth](pretrained=pretrained)
 
+        if pretrained:
+            for param in encoder.parameters():
+                param.requires_grad=False
+
         # we initialize this conv to take in 4 channels instead of 3
         # we keeping corresponding weights and initializing new weights with zeros
         # this trick taken from https://www.kaggle.com/iafoss/pretrained-resnet34-with-rgby-0-460-public-lb
         w = encoder.conv1.weight
-        w.requires_grad = False if pretrained else True
         self.conv1 = nn.Conv2d(4, 64, kernel_size=7, stride=2, padding=3,
                                bias=False)
-
-        self.conv1.weight = nn.Parameter(torch.cat((w,w[:,:1,:,:]),dim=1))
+        self.conv1.weight = nn.Parameter(cat((w,w[:,:1,:,:]),dim=1))
 
         self.bn1 = encoder.bn1
         self.relu = nn.ReLU(inplace=True)
@@ -96,7 +76,8 @@ class Resnet4Channel(nn.Module):
         self.layer4 = encoder.layer4
 
         self.avgpool = encoder.avgpool
-        self.fc = nn.Linear(512 * (1 if encoder_depth==34 else 4), num_classes)
+        num_features = encoder.fc.in_features
+        self.fc = nn.Linear(num_features, 28)
 
     def forward(self, x):
         x = self.conv1(x)
@@ -121,92 +102,87 @@ class VGG4Channel(nn.Module):
         super().__init__()
 
         if batch_norm:
-            classifier = VGG_BN_CLASSIFIERS[n_layers](pretrained=pretrained)
+            vgg_net = VGG_BN_CLASSIFIERS[n_layers](pretrained=pretrained)
         else:
-            classifier = VGG_CLASSIFIERS[n_layers](pretrained=pretrained)
+            vgg_net = VGG_CLASSIFIERS[n_layers](pretrained=pretrained)
 
-        w = classifier.features[0].weight
-        w.requires_grad = False if pretrained else True
-        self.conv2d = nn.Conv2d(4, 64, kernel_size=3, padding=1)
+        if pretrained:
+            for param in vgg_net.features.parameters():
+                param.requires_grad=False
+            for param in vgg_net.classifier.parameters():
+                param.requires_grad=False
 
-        features = list(net.features.children())[1:]
+        # initialize conv2d to take in 4 channels instead of 3
+        feature_layers = []
+        w = vgg_net.features[0].weight
+        conv2d = nn.Conv2d(4, 64, kernel_size=3, padding=1) # Create 2d conv layer
+        conv2d.weight = nn.Parameter(cat((w,w[:,:1,:,:]),dim=1))
+        feature_layers.append(conv2d)
 
+        remaining_features = list(vgg_net.features.children())[1:] # Remove first layer
+        feature_layers.extend(remaining_features)
 
+        # swap last layer for fc layer with 28 outputs
+        num_features = vgg_net.classifier[-1].in_features
+        classifier_layers = list(vgg_net.classifier.children())[:-1] # Remove last layer
+        classifier_layers.extend([nn.Linear(num_features, 28)]) # Add layer with 28 outputs. activation in loss function
 
+        self.features = nn.Sequential(*feature_layers)
+        self.classifier = nn.Sequential(*classifier_layers)
 
-
+    def forward(self, x):
+        x = self.features(x)
+        x = x.view(x.size(0), -1)
+        x = self.classifier(x)
+        return x
 
 
 def resnet34(pretrained):
-    net = Resnet4Channel(encoder_depth=34)
-    if pretrained:
-        freeze_pretrained_model_weights(net, 'resnet')
+    net = Resnet4Channel(encoder_depth=34, pretrained=pretrained)
     return net
 
 def resnet50(pretrained):
-    net = Resnet4Channel(encoder_depth=50)
-    if pretrained:
-        freeze_pretrained_model_weights(net, 'resnet')
+    net = Resnet4Channel(encoder_depth=50, pretrained=pretrained)
     return net
 
 def resnet101(pretrained):
-    net =  Resnet4Channel(encoder_depth=101)
-    if pretrained:
-        freeze_pretrained_model_weights(net, 'resnet')
+    net =  Resnet4Channel(encoder_depth=101, pretrained=pretrained)
     return net
 
 def resnet152(pretrained):
-    net = Resnet4Channel(encoder_depth=152)
-    if pretrained:
-        freeze_pretrained_model_weights(net, 'resnet')
+    net = Resnet4Channel(encoder_depth=152, pretrained=pretrained)
     return net
 
 def vgg11(pretrained):
-    net = VGG4Channel(n_layers=11, batch_norm=False)
-    if pretrained:
-        freeze_pretrained_model_weights(net, 'vgg')
+    net = VGG4Channel(n_layers=11, batch_norm=False, pretrained=pretrained)
     return net
 
 def vgg13(pretrained):
-    net = VGG4Channel(n_layers=13, batch_norm=False)
-    if pretrained:
-        freeze_pretrained_model_weights(net, 'vgg')
+    net = VGG4Channel(n_layers=13, batch_norm=False, pretrained=pretrained)
     return net
 
 def vgg16(pretrained):
-    net = VGG4Channel(n_layers=16, batch_norm=False)
-    if pretrained:
-        freeze_pretrained_model_weights(net, 'vgg')
+    net = VGG4Channel(n_layers=16, batch_norm=False, pretrained=pretrained)
     return net
 
 def vgg19(pretrained):
-    net = VGG4Channel(n_layers=19, batch_norm=False)
-    if pretrained:
-        freeze_pretrained_model_weights(net, 'vgg')
+    net = VGG4Channel(n_layers=19, batch_norm=False, pretrained=pretrained)
     return net
 
 def vgg11_bn(pretrained):
-    net = VGG4Channel(n_layers=11, batch_norm=True)
-    if pretrained:
-        freeze_pretrained_model_weights(net, 'vgg')
+    net = VGG4Channel(n_layers=11, batch_norm=True, pretrained=pretrained)
     return net
 
 def vgg13_bn(pretrained):
-    net = VGG4Channel(n_layers=13, batch_norm=True)
-    if pretrained:
-        freeze_pretrained_model_weights(net, 'vgg')
+    net = VGG4Channel(n_layers=13, batch_norm=True, pretrained=pretrained)
     return net
 
 def vgg16_bn(pretrained):
-    net = VGG4Channel(n_layers=16, batch_norm=True)
-    if pretrained:
-        freeze_pretrained_model_weights(net, 'vgg')
+    net = VGG4Channel(n_layers=16, batch_norm=True, pretrained=pretrained)
     return net
 
 def vgg19_bn(pretrained):
-    net = VGG4Channel(n_layers=19, batch_norm=True)
-    if pretrained:
-        freeze_pretrained_model_weights(net, 'vgg')
+    net = VGG4Channel(n_layers=19, batch_norm=True, pretrained=pretrained)
     return net
 
 def baseline(pretrained):

@@ -26,7 +26,7 @@ def main():
     parser.add_argument('--train-images-path', type=str, default=default_train_images)
     parser.add_argument('--train-csv-path', type=str, default=default_csv)
     parser.add_argument('-l', '--load',
-                    help='if using load, must be path to .pth file containing serialized model state dict, ')
+                    help='if using load, must be path to .pth file containing serialized model state dict')
     parser.add_argument('--batchSz', type=int, default=32) # 64
     parser.add_argument('--nEpochs', type=int, default=1) # 300
     parser.add_argument('--sEpoch', type=int, default=1)
