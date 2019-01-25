@@ -132,7 +132,8 @@ class IncrementalClassRectificationLoss(nn.Module):
             return loss
 
         except RuntimeError:
-            # TODO: figure out why we are sometimes getting RuntimeError in test
+            # Getting runtime error in torch.cat above as sometimets there are
+            # no index or pred tensors to combine from hard mining
             logging.warning('RuntimeError in loss statement')
 
             return bce

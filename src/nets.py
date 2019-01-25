@@ -26,7 +26,7 @@ VGG_BN_CLASSIFIERS = {
 }
 
 
-class Net(torch.nn.Module):
+class Net(nn.Module):
     def __init__(self):
         super(Net, self).__init__()
         self.conv1 = nn.Conv2d(4, 6, 5) # 4 channel in, 6 channels out, filter size 5

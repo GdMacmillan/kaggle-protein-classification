@@ -17,7 +17,7 @@ def get_transforms(pretrained=False):
     if pretrained:
         transform = {
             'TRAIN': transforms.Compose(
-                            [CombineColors(pretrained),
+                            [CombineColors(),
                              ToPILImage(),
                              RandomResizedCrop(224),
                              RandomHorizontalFlip(),
@@ -27,7 +27,7 @@ def get_transforms(pretrained=False):
                             ]
             ),
             'DEV': transforms.Compose(
-                            [CombineColors(pretrained),
+                            [CombineColors(),
                              ToPILImage(),
                              Resize(256),
                              CenterCrop(224),
@@ -112,56 +112,6 @@ def get_train_test_split(args, val_split=0.10, distributed=False, **kwargs):
         devLoader = DataLoader(devset, shuffle=False, **kwargs)
 
     return trainLoader, devLoader
-
-# def freeze_pretrained_model_weights(net):
-#     for param in net.features.parameters():
-#         param.require_grad = False
-#
-#     return net
-#
-# def freeze_pretrained_model_weights_renet(net):
-#     for param in net.parameters():
-#         param.requires_grad = False
-#
-#     return net
-#
-# def swap_last_layer(net):
-#     num_features = net.classifier[-1].in_features
-#     features = list(net.classifier.children())[:-1] # Remove last layer
-#     features.extend([Linear(num_features, 28)]) # Add our layer with 28 outputs. activation in loss function
-#     net.classifier = Sequential(*features) # Replace the model classifier
-#
-#     return net
-#
-# def swap_last_layer_resnet(net):
-#     num_features = net.fc.in_features
-#     net.fc = Linear(num_features, 28)
-#
-#     return net
-
-# def get_network(args):
-#     name = args.network_name
-#     pretrained = args.pretrained
-#     if hasattr(models, name):
-#         torchvision_model = getattr(models, name)
-#         net = torchvision_model()
-#         if pretrained:
-#         # Freeze training for all layers
-#         # Newly created modules have require_grad=True by default
-#             if 'resnet' in name:
-#                 freeze_pretrained_model_weights_renet(net)
-#             else:
-#                 freeze_pretrained_model_weights(net)
-#
-#         if 'resnet' in name:
-#             net = swap_last_layer_resnet(net)
-#         else:
-#             net = swap_last_layer(net)
-#
-#     else:
-#         net = Net()
-#
-#     return net
 
 def get_loss_function(lf='bce', args=None):
     if lf == 'bce':

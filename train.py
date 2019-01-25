@@ -268,6 +268,8 @@ def unfreeze_weights(args, epoch, net):
         else:
             for param in net.features.parameters():
                 param.require_grad = True
+            for param in net.classifier.parameters():
+                param.require_grad = True
 
 if __name__ == '__main__':
     main()
