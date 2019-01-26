@@ -4,7 +4,7 @@
 
 echo "*** running train script ***"
 
-python -u train.py -n "resnet152" -d "hpa" -p "True" --train-images-path="/hpakf-image-data/data/train_images" --nSubsample=1000 --nEpochs=1 --batchSz=64 --unfreeze-epoch=23 --use-cuda=yes --crit="crl"
+python -u train.py -n "resnet152" -d "hpa" -p "True" --train-images-path="/hpakf-image-data/data/train_images" --nEpochs=25 --batchSz=64 --unfreeze-epoch=23 --use-cuda=yes --crit="crl"
 
 echo "*** training complete. running test script ***"
 
