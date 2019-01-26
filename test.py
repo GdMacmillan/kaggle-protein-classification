@@ -15,6 +15,7 @@ from src import *
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 CLOUD_STORAGE_BUCKET = os.environ['CLOUD_STORAGE_BUCKET'] if('CLOUD_STORAGE_BUCKET' in os.environ) else ""
+GOOGLE_APPLICATION_CREDENTIALS_JSON_FILE = os.environ['GOOGLE_APPLICATION_CREDENTIALS_JSON_FILE']
 BRANCH_NAME = os.environ['BRANCH'] if('BRANCH' in os.environ) else "probably-master"
 
 default_test_images = os.path.join(BASE_DIR, 'data/test_images')
@@ -49,7 +50,7 @@ def main():
 
     testLoader = get_testloader(args, **kwargs)
 
-    net = get_network(args)
+    net = NETWORKS_DICT[args.network_name](args.pretrained)
     if args.load:
         print("Loading network: {}".format(args.load))
     else:
@@ -75,7 +76,8 @@ def main():
     predF.close
 
     if len(CLOUD_STORAGE_BUCKET) != 0:
-        storage_client = storage.Client()
+        storage_client = storage.Client.from_service_account_json(
+        GOOGLE_APPLICATION_CREDENTIALS_JSON_FILE)
         bucket = storage_client.get_bucket(CLOUD_STORAGE_BUCKET)
         blob = bucket.blob(predict_csv_path)
 

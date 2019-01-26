@@ -1,4 +1,39 @@
+Traceback (most recent call last):
+  File "/opt/conda/lib/python3.6/site-packages/google/auth/_default.py", line 93, in _load_credentials_from_file
+    info = json.load(file_obj)
+  File "/opt/conda/lib/python3.6/json/__init__.py", line 299, in load
+    parse_constant=parse_constant, object_pairs_hook=object_pairs_hook, **kw)
+  File "/opt/conda/lib/python3.6/json/__init__.py", line 354, in loads
+    return _default_decoder.decode(s)
+  File "/opt/conda/lib/python3.6/json/decoder.py", line 339, in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+  File "/opt/conda/lib/python3.6/json/decoder.py", line 357, in raw_decode
+    raise JSONDecodeError("Expecting value", s, err.value) from None
+json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
 
-1. Test thresholding in kaggle kernel
+The above exception was the direct cause of the following exception:
 
-2. Try ADAM optimizer
+Traceback (most recent call last):
+  File "train.py", line 275, in <module>
+    main()
+  File "train.py", line 134, in main
+    storage_client = storage.Client()
+  File "/opt/conda/lib/python3.6/site-packages/google/cloud/storage/client.py", line 73, in __init__
+    project=project, credentials=credentials, _http=_http
+  File "/opt/conda/lib/python3.6/site-packages/google/cloud/client.py", line 223, in __init__
+    _ClientProjectMixin.__init__(self, project=project)
+  File "/opt/conda/lib/python3.6/site-packages/google/cloud/client.py", line 175, in __init__
+    project = self._determine_default(project)
+  File "/opt/conda/lib/python3.6/site-packages/google/cloud/client.py", line 190, in _determine_default
+    return _determine_default_project(project)
+  File "/opt/conda/lib/python3.6/site-packages/google/cloud/_helpers.py", line 186, in _determine_default_project
+    _, project = google.auth.default()
+  File "/opt/conda/lib/python3.6/site-packages/google/auth/_default.py", line 294, in default
+    credentials, project_id = checker()
+  File "/opt/conda/lib/python3.6/site-packages/google/auth/_default.py", line 165, in _get_explicit_environ_credentials
+    os.environ[environment_vars.CREDENTIALS])
+  File "/opt/conda/lib/python3.6/site-packages/google/auth/_default.py", line 98, in _load_credentials_from_file
+    six.raise_from(new_exc, caught_exc)
+  File "<string>", line 3, in raise_from
+google.auth.exceptions.DefaultCredentialsError: ('File /workspace/gcs_credentials.json is not a valid json file.', JSONDecodeError('Expecting value: line 1 column 1 (char 0)',))
+*** training complete. running test script ***
