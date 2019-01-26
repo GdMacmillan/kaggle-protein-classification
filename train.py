@@ -7,7 +7,6 @@ import setproctitle
 import shutil
 import csv
 from google.cloud.storage import Client
-from google.oauth2.service_account import Credentials
 
 # internals
 from src import *
@@ -64,7 +63,7 @@ def main():
 
     print('testing upload to google cloud storage bucket')
     if len(CLOUD_STORAGE_BUCKET) != 0:
-        storage_client = storage.Client.from_service_account_json(
+        storage_client = Client.from_service_account_json(
         GOOGLE_APPLICATION_CREDENTIALS_JSON_FILE)
         print('client authenticated')
         bucket = storage_client.get_bucket(CLOUD_STORAGE_BUCKET)
@@ -157,7 +156,7 @@ def main():
     testF.close()
 
     # if len(CLOUD_STORAGE_BUCKET) != 0:
-    #     storage_client = storage.Client.from_service_account_json(
+    #     storage_client = Client.from_service_account_json(
     #     GOOGLE_APPLICATION_CREDENTIALS_JSON_FILE)
     #     bucket = storage_client.get_bucket(CLOUD_STORAGE_BUCKET)
     #     all_files = [name for name in os.listdir(args.save) \
