@@ -8,14 +8,14 @@ import shutil
 import csv
 import datetime
 import pytz
-from google.cloud import storage
+from google.cloud.storage import Client
 
 # internals
 from src import *
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+CREDENTIALS = os.environ['GOOGLE_APPLICATION_CREDENTIALS_JSON_FILE']
 CLOUD_STORAGE_BUCKET = os.environ['CLOUD_STORAGE_BUCKET'] if('CLOUD_STORAGE_BUCKET' in os.environ) else ""
-GOOGLE_APPLICATION_CREDENTIALS_JSON_FILE = os.environ['GOOGLE_APPLICATION_CREDENTIALS_JSON_FILE']
 BRANCH_NAME = os.environ['BRANCH'] if('BRANCH' in os.environ) else "probably-master"
 
 default_test_images = os.path.join(BASE_DIR, 'data/test_images')
@@ -76,8 +76,8 @@ def main():
     predF.close
 
     if len(CLOUD_STORAGE_BUCKET) != 0:
-        storage_client = storage.Client.from_service_account_json(
-        GOOGLE_APPLICATION_CREDENTIALS_JSON_FILE)
+        storage_client = Client.from_service_account_json(CREDENTIALS)
+        print('client authenticated')
         bucket = storage_client.get_bucket(CLOUD_STORAGE_BUCKET)
         blob = bucket.blob(predict_csv_path)
 

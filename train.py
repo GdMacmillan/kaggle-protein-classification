@@ -12,8 +12,8 @@ from google.cloud.storage import Client
 from src import *
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+CREDENTIALS = os.environ['GOOGLE_APPLICATION_CREDENTIALS_JSON_FILE']
 CLOUD_STORAGE_BUCKET = os.environ['CLOUD_STORAGE_BUCKET'] if('CLOUD_STORAGE_BUCKET' in os.environ) else ""
-GOOGLE_APPLICATION_CREDENTIALS_JSON_FILE = os.environ['GOOGLE_APPLICATION_CREDENTIALS_JSON_FILE']
 
 default_train_images = os.path.join(BASE_DIR, 'data/train_images')
 default_csv = os.path.join(BASE_DIR, 'data/train.csv')
@@ -58,29 +58,6 @@ def main():
         nGPU = 1
     else:
         nGPU = args.nGPU
-
-
-
-    print('testing upload to google cloud storage bucket')
-    if len(CLOUD_STORAGE_BUCKET) != 0:
-        storage_client = Client.from_service_account_json(
-        GOOGLE_APPLICATION_CREDENTIALS_JSON_FILE)
-        print('client authenticated')
-        bucket = storage_client.get_bucket(CLOUD_STORAGE_BUCKET)
-        all_files = [name for name in os.listdir(args.save) \
-                            if os.path.isfile(os.path.join(args.save, name))]
-        if len(all_files) > 0:
-            print("uploading weights...")
-            for file in all_files:
-                blob = bucket.blob(os.path.join(args.save, file))
-                blob.upload_from_filename(os.path.join(args.save, file))
-
-
-
-
-
-
-
 
     main_proc = True
     if args.distributed:
@@ -155,17 +132,17 @@ def main():
     trainF.close()
     testF.close()
 
-    # if len(CLOUD_STORAGE_BUCKET) != 0:
-    #     storage_client = Client.from_service_account_json(
-    #     GOOGLE_APPLICATION_CREDENTIALS_JSON_FILE)
-    #     bucket = storage_client.get_bucket(CLOUD_STORAGE_BUCKET)
-    #     all_files = [name for name in os.listdir(args.save) \
-    #                         if os.path.isfile(os.path.join(args.save, name))]
-    #     if len(all_files) > 0:
-    #         print("uploading weights...")
-    #         for file in all_files:
-    #             blob = bucket.blob(os.path.join(args.save, file))
-    #             blob.upload_from_filename(os.path.join(args.save, file))
+    if len(CLOUD_STORAGE_BUCKET) != 0:
+        storage_client = Client.from_service_account_json(CREDENTIALS)
+        bucket = storage_client.get_bucket(CLOUD_STORAGE_BUCKET)
+        all_files = [name for name in os.listdir(args.save) \
+                            if os.path.isfile(os.path.join(args.save, name))]
+        if len(all_files) > 0:
+            print("uploading weights...")
+            for file in all_files:
+                blob = bucket.blob(os.path.join(args.save, file))
+                blob.upload_from_filename(os.path.join(args.save, file))
+            print('upload complete')
 
 def train(args, epoch, net, trainLoader, criterion, optimizer, trainF):
     net.train()
