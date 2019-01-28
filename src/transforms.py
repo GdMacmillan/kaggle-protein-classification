@@ -6,8 +6,6 @@ from torchvision import transforms
 
 class CombineColors(object):
     """Combines the the image in a sample to a given size."""
-    def __init__(self, pretrained=False):
-        self.pretrained = pretrained
 
     def __call__(self, sample):
         img_name = sample['image_id']
@@ -16,10 +14,7 @@ class CombineColors(object):
         img_green = sample['image_green']
         img_yellow = sample['image_yellow']
         labels = sample['labels']
-        if self.pretrained:
-            image = np.dstack((img_red, img_green, img_blue))
-        else:
-            image = np.dstack((img_red, img_blue, img_green, img_yellow))
+        image = np.dstack((img_red, img_green, img_blue, img_yellow))
 
         return {'image': image, 'labels': labels, 'image_id': img_name}
 

@@ -6,16 +6,18 @@ import os
 import setproctitle
 import shutil
 import csv
-from google.cloud import storage
+from google.cloud.storage import Client
 
 # internals
 from src import *
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+CREDENTIALS = os.environ['GOOGLE_APPLICATION_CREDENTIALS_JSON_FILE']
 CLOUD_STORAGE_BUCKET = os.environ['CLOUD_STORAGE_BUCKET'] if('CLOUD_STORAGE_BUCKET' in os.environ) else ""
 
 default_train_images = os.path.join(BASE_DIR, 'data/train_images')
 default_csv = os.path.join(BASE_DIR, 'data/train.csv')
+
 
 def main():
     parser = argparse.ArgumentParser()
@@ -26,7 +28,7 @@ def main():
     parser.add_argument('--train-images-path', type=str, default=default_train_images)
     parser.add_argument('--train-csv-path', type=str, default=default_csv)
     parser.add_argument('-l', '--load',
-                    help='if using load, must be path to .pth file containing serialized model state dict, ')
+                    help='if using load, must be path to .pth file containing serialized model state dict')
     parser.add_argument('--batchSz', type=int, default=32) # 64
     parser.add_argument('--nEpochs', type=int, default=1) # 300
     parser.add_argument('--sEpoch', type=int, default=1)
@@ -79,7 +81,9 @@ def main():
 
     trainLoader, devLoader = get_train_test_split(args, **kwargs)
 
-    net = get_network(args)
+    # net = get_network(args)
+    net = NETWORKS_DICT[args.network_name](args.pretrained)
+
     if args.load:
         print("Loading network: {}".format(args.load))
         load_model(args, net)
@@ -129,7 +133,7 @@ def main():
     testF.close()
 
     if len(CLOUD_STORAGE_BUCKET) != 0:
-        storage_client = storage.Client()
+        storage_client = Client.from_service_account_json(CREDENTIALS)
         bucket = storage_client.get_bucket(CLOUD_STORAGE_BUCKET)
         all_files = [name for name in os.listdir(args.save) \
                             if os.path.isfile(os.path.join(args.save, name))]
@@ -138,6 +142,7 @@ def main():
             for file in all_files:
                 blob = bucket.blob(os.path.join(args.save, file))
                 blob.upload_from_filename(os.path.join(args.save, file))
+            print('upload complete')
 
 def train(args, epoch, net, trainLoader, criterion, optimizer, trainF):
     net.train()
@@ -265,6 +270,8 @@ def unfreeze_weights(args, epoch, net):
             print('params unfrozen')
         else:
             for param in net.features.parameters():
+                param.require_grad = True
+            for param in net.classifier.parameters():
                 param.require_grad = True
 
 if __name__ == '__main__':
